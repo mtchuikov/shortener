@@ -13,6 +13,6 @@ func (h *Handler) ResolveShortID(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rw.Header().Set("Location", originalURL)
 	rw.WriteHeader(http.StatusTemporaryRedirect)
+	rw.Header().Set("Location", originalURL)
 }
