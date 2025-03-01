@@ -36,7 +36,7 @@ func main() {
 	handler := handler.New(service)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/create", middlewares.OnlyMethod(http.MethodPost,
+	mux.HandleFunc("/", middlewares.OnlyMethod(http.MethodPost,
 		handler.CreateShortID))
 	mux.HandleFunc("/{short_id}", middlewares.OnlyMethod(http.MethodGet,
 		handler.ResolveShortID))
