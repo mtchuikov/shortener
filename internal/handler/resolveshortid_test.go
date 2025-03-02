@@ -31,6 +31,7 @@ func TestResolveShort_Success(t *testing.T) {
 	rawReqBody := strings.NewReader(originalURL)
 	req, _ := http.NewRequest(http.MethodPost, server.URL+"/", rawReqBody)
 	resp, _ := client.Do(req)
+	defer resp.Body.Close()
 
 	require.Equal(t, http.StatusCreated, resp.StatusCode, "expected 201 code")
 
@@ -46,6 +47,7 @@ func TestResolveShort_Success(t *testing.T) {
 		return http.ErrUseLastResponse
 	}
 	resp, _ = client.Do(req)
+	defer resp.Body.Close()
 
 	require.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode, "expected 307 code")
 
@@ -66,6 +68,7 @@ func TestResolveShort_InvalidShortID(t *testing.T) {
 	client := server.Client()
 	req, _ := http.NewRequest(http.MethodGet, server.URL+"/not short id", nil)
 	resp, _ := client.Do(req)
+	defer resp.Body.Close()
 
 	errMsg := "expected 400 status code for invalid short id"
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode, errMsg)
@@ -91,6 +94,7 @@ func TestResolveShortID_NoSuchShortID(t *testing.T) {
 	client := server.Client()
 	req, _ := http.NewRequest(http.MethodGet, server.URL+"/dtb1end7", nil)
 	resp, _ := client.Do(req)
+	defer resp.Body.Close()
 
 	errMsg := "expected 404 status code for non-existing short id"
 	require.Equal(t, http.StatusNotFound, resp.StatusCode, errMsg)
