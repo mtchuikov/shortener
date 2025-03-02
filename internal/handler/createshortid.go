@@ -19,13 +19,12 @@ func (h *Handler) CreateShortID(rw http.ResponseWriter, req *http.Request) {
 	bodyLen := len(body)
 	if bodyLen == 0 {
 		errMsg := ErrNoURLProvided.Error()
-		http.Error(rw, errMsg, http.StatusBadRequest)
+		http.Error(rw, errMsg, http.StatusNotFound)
 		return
 	}
 
 	if bodyLen >= maxURLSize {
-		errMsg := ErrURLTooLong.Error()
-		http.Error(rw, errMsg, http.StatusRequestEntityTooLarge)
+		http.Error(rw, ErrURLTooLong.Error(), http.StatusRequestEntityTooLarge)
 		return
 	}
 

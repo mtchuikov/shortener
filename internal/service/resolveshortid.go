@@ -28,7 +28,7 @@ func (s *Service) ResolveShortID(ctx context.Context, shortID string) (string, i
 	}
 
 	if originalURL == "" {
-		return "", http.StatusBadRequest, ErrNoSuchShortID
+		return "", http.StatusNotFound, ErrNoSuchShortID
 	}
 
 	return originalURL, 0, nil
