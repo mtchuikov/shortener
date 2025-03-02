@@ -48,6 +48,7 @@ func TestCreateShortID_NoBody(t *testing.T) {
 
 	handler.CreateShortID(recorder, req)
 	resp := recorder.Result()
+	defer resp.Body.Close()
 
 	require.Equal(t, http.StatusNotFound, resp.StatusCode, "expected 404 code for empty body")
 
@@ -72,6 +73,7 @@ func TestCreateShortID_TooLongBody(t *testing.T) {
 
 	handler.CreateShortID(recorder, req)
 	resp := recorder.Result()
+	defer resp.Body.Close()
 
 	errMsg := "expected 413 code for too long body"
 	require.Equal(t, http.StatusRequestEntityTooLarge, resp.StatusCode, errMsg)
