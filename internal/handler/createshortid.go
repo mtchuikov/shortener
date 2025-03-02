@@ -30,7 +30,6 @@ func (h *Handler) CreateShortID(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	ctx := req.Context()
-
 	originalURL := string(body)
 	shortID, code, err := h.service.CreateShortID(ctx, originalURL)
 	if err != nil {
@@ -39,5 +38,5 @@ func (h *Handler) CreateShortID(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	rw.WriteHeader(http.StatusCreated)
-	rw.Write([]byte(shortID))
+	rw.Write([]byte("http://localhost:8080/" + shortID))
 }
