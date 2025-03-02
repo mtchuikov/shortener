@@ -8,11 +8,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/mtchuikov/shortener/internal/config"
 	"github.com/mtchuikov/shortener/internal/handler"
 	"github.com/mtchuikov/shortener/internal/service"
 	storage "github.com/mtchuikov/shortener/internal/storage/inmemory"
-	"github.com/mtchuikov/shortener/pkg/middlewares"
 	"github.com/rs/zerolog"
 )
 
@@ -35,11 +35,9 @@ func main() {
 	service := service.New(logger, storage)
 	handler := handler.New(service)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", middlewares.OnlyMethod(http.MethodPost,
-		handler.CreateShortID))
-	mux.HandleFunc("/{short_id}", middlewares.OnlyMethod(http.MethodGet,
-		handler.ResolveShortID))
+	mux := chi.NewRouter()
+	mux.Post("/", handler.CreateShortID)
+	mux.Get("/{short_id}", handler.ResolveShortID)
 
 	httpServer := http.Server{
 		Addr:         config.Addr,
