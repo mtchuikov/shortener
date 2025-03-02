@@ -26,6 +26,7 @@ func TestCreateShortID_Success(t *testing.T) {
 
 	handler.CreateShortID(recorder, req)
 	resp := recorder.Result()
+	defer resp.Body.Close()
 
 	require.Equal(t, http.StatusCreated, resp.StatusCode, "expected 201 code")
 
