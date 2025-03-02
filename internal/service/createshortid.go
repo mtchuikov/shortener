@@ -35,9 +35,7 @@ func (s *Service) CreateShortID(ctx context.Context, originalURL string) (string
 
 	shortID, err := s.storage.GetShortID(ctx, originalURL)
 	if err != nil {
-		errMsg := "service: failed to check if original url exists"
-		s.logger.Err(err).Msg(errMsg)
-
+		s.logger.Err(err).Msg("service: failed to check if original url exists")
 		code := http.StatusInternalServerError
 		return "", code, ErrSomethidWentWrong
 	}
@@ -46,9 +44,7 @@ func (s *Service) CreateShortID(ctx context.Context, originalURL string) (string
 		shortID = randtools.DefaultGenerateString(shortIDLen)
 		err := s.storage.CreateShortID(ctx, shortID, originalURL)
 		if err != nil {
-			errMsg := "service: failed to write short id to db"
-			s.logger.Err(err).Msg(errMsg)
-
+			s.logger.Err(err).Msg("service: failed to write short id to db")
 			code := http.StatusInternalServerError
 			return "", code, ErrSomethidWentWrong
 		}
