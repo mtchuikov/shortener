@@ -81,7 +81,7 @@ func main() {
 	<-stopCtx.Done()
 
 	logger.Info().Msg("shutting down server...")
-	shutdownCtx, shutdown := context.WithTimeout(rootCtx, 5*time.Second)
+	shutdownCtx, shutdown := context.WithTimeout(rootCtx, 3*time.Second)
 	defer shutdown()
 
 	server.Shutdown(shutdownCtx)
