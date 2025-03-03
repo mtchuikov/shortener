@@ -7,28 +7,30 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/mtchuikov/shortener/internal/service"
-	storage "github.com/mtchuikov/shortener/internal/storage/inmemory"
+	memstorage "github.com/mtchuikov/shortener/internal/storage/mem"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
 )
 
-func TestResolveShort_Success(t *testing.T) {
-	storage := storage.New()
-	service := service.New(log.Logger, storage)
+func TestResolveShortID_Success(t *testing.T) {
+	storage := memstorage.New()
+
+	baseURL := "http://localhost:3214/api/"
+	service := service.New(log.Logger, baseURL, storage)
 	handler := New(service)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", handler.CreateShortID)
-	mux.HandleFunc("/{short_id}", handler.ResolveShortID)
+	mux := chi.NewRouter()
+	mux.Get("/{short_id}", handler.ResolveShortID)
+	mux.Post("/", handler.ShortURL)
 
 	server := httptest.NewServer(mux)
 	defer server.Close()
-
 	client := server.Client()
 
-	originalURL := "http://example.com"
-	rawReqBody := strings.NewReader(originalURL)
+	mockURL := "http://example.com"
+	rawReqBody := strings.NewReader(mockURL)
 	req, _ := http.NewRequest(http.MethodPost, server.URL+"/", rawReqBody)
 	resp, err := client.Do(req)
 
@@ -56,15 +58,17 @@ func TestResolveShort_Success(t *testing.T) {
 	require.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode, "expected 307 code")
 
 	location := resp.Header.Get("Location")
-	require.Equal(t, originalURL, location, "expected location header to match original url")
+	require.Equal(t, mockURL, location, "expected location header to match original url")
 }
 
-func TestResolveShort_InvalidShortID(t *testing.T) {
-	storage := storage.New()
-	handler := New(service.New(log.Logger, storage))
+func TestResolveShortID_InvalidShortID(t *testing.T) {
+	storage := memstorage.New()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/{short_id}", handler.ResolveShortID)
+	baseURL := "http://localhost:3214/api/"
+	handler := New(service.New(log.Logger, baseURL, storage))
+
+	mux := chi.NewRouter()
+	mux.Get("/{short_id}", handler.ResolveShortID)
 
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -84,15 +88,17 @@ func TestResolveShort_InvalidShortID(t *testing.T) {
 
 	respBody := strings.ReplaceAll(string(rawRespBody), "\n", "")
 	errMsg = "expected no short id provided error"
-	require.Equal(t, service.ErrInvalidShortID.Error(), respBody, errMsg)
+	require.Equal(t, service.ErrInvalidID.Error(), respBody, errMsg)
 }
 
 func TestResolveShortID_NoSuchShortID(t *testing.T) {
-	storage := storage.New()
-	handler := New(service.New(log.Logger, storage))
+	storage := memstorage.New()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/{short_id}", handler.ResolveShortID)
+	baseURL := "http://localhost:3214/api/"
+	handler := New(service.New(log.Logger, baseURL, storage))
+
+	mux := chi.NewRouter()
+	mux.Get("/{short_id}", handler.ResolveShortID)
 
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -105,12 +111,12 @@ func TestResolveShortID_NoSuchShortID(t *testing.T) {
 	defer resp.Body.Close()
 
 	errMsg := "expected 404 status code for non-existing short id"
-	require.Equal(t, http.StatusNotFound, resp.StatusCode, errMsg)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode, errMsg)
 
 	rawRespBody, err := io.ReadAll(resp.Body)
 	require.NoError(t, err, "expected no error when reading body")
 
 	respBody := strings.ReplaceAll(string(rawRespBody), "\n", "")
 	errMsg = "expected no such short id error"
-	require.Equal(t, service.ErrNoSuchShortID.Error(), respBody, errMsg)
+	require.Equal(t, service.ErrIDNotFound.Error(), respBody, errMsg)
 }

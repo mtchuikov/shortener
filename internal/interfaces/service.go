@@ -3,6 +3,6 @@ package interfaces
 import "context"
 
 type Service interface {
-	CreateShortID(ctx context.Context, originalURL string) (string, int, error)
-	ResolveShortID(ctx context.Context, shortID string) (string, int, error)
+	ShortURL(ctx context.Context, url string) (string, error)
+	ResolveShortID(ctx context.Context, id string) (string, error)
 }

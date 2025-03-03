@@ -1,11 +1,13 @@
 package config
 
 type Config struct {
-	Addr string
+	Addr    string
+	BaseURL string
+	Verbose bool
 }
 
 func New() Config {
-	return Config{
-		Addr: "127.0.0.1:8080",
-	}
+	config := Config{}
+	loadFromFlags(&config)
+	return config
 }
