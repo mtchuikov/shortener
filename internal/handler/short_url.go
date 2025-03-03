@@ -38,5 +38,5 @@ func (h *Handler) ShortURL(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	rw.WriteHeader(http.StatusCreated)
-	rw.Write([]byte(shortURL))
+	rw.Write([]byte("http://127.0.0.1:8080/" + shortURL))
 }

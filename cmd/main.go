@@ -51,9 +51,9 @@ func newRouter(config config.Config, logger zerolog.Logger) http.Handler {
 	return mux
 }
 
-func newServer(config config.Config, logger zerolog.Logger) http.Server {
+func newServer(config config.Config, logger zerolog.Logger) *http.Server {
 	mux := newRouter(config, logger)
-	return http.Server{
+	return &http.Server{
 		Addr:         config.Addr,
 		Handler:      mux,
 		WriteTimeout: 3 * time.Second,
