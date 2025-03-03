@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -37,7 +36,6 @@ func TestCreateShortURL_Success(t *testing.T) {
 	url := strings.ReplaceAll(string(rawRespBody), "\n", "")
 	var validShortURL = regexp.MustCompile(`^http://localhost:3214/api/[A-Za-z0-9]{8}$`)
 	valid := validShortURL.MatchString(url)
-	fmt.Println(url)
 	require.True(t, valid, "expected valid short url")
 }
 
