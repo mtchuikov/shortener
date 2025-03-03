@@ -6,13 +6,15 @@ import (
 )
 
 type Service struct {
+	baseURL string
 	logger  zerolog.Logger
-	storage interfaces.Repo
+	storage interfaces.Storage
 }
 
-func New(logger zerolog.Logger, storage interfaces.Repo) *Service {
+func New(logger zerolog.Logger, baseURL string, storage interfaces.Storage) *Service {
 	return &Service{
-		logger:  logger,
 		storage: storage,
+		logger:  logger,
+		baseURL: baseURL,
 	}
 }

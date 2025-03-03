@@ -2,17 +2,19 @@ package handler
 
 import (
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func (h *Handler) ResolveShortID(rw http.ResponseWriter, req *http.Request) {
-	ctx := req.Context()
-	shortID := req.PathValue("short_id")
-	originalURL, code, err := h.service.ResolveShortID(ctx, shortID)
+	id := chi.URLParam(req, "short_id")
+	url, err := h.service.ResolveShortID(req.Context(), id)
 	if err != nil {
+		code := serviceErrToStatusCode(err)
 		http.Error(rw, err.Error(), code)
 		return
 	}
 
-	rw.Header().Set("Location", originalURL)
+	rw.Header().Set("Location", url)
 	rw.WriteHeader(http.StatusTemporaryRedirect)
 }
