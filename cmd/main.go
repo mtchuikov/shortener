@@ -67,7 +67,10 @@ func main() {
 	defer stop()
 
 	logger := newLogger()
-	config := config.New()
+	config, err := config.New()
+	if err != nil {
+		logger.Fatal().Msgf("failed to load config %v", err)
+	}
 
 	server := newServer(config, logger)
 	go func() {
