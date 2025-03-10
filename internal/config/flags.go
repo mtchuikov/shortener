@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	serverAddrFlag = pflag.StringP("server-addr", "a", "127.0.0.1:8080", "server address")
-	baseURLFlag    = pflag.StringP("base-url", "b", "http://127.0.0.1:8080/", "base url for shortened links")
+	serverAddrFlag = pflag.StringP("addr", "a", "127.0.0.1:8080", "server address")
+	baseURLFlag    = pflag.StringP("base", "b", "http://127.0.0.1:8080/", "base url for shortened links")
 	verboseFlag    = pflag.BoolP("verbose", "v", false, "print verbose logs")
 )
 
