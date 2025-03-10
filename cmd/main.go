@@ -55,7 +55,7 @@ func newRouter(config config.Config, logger zerolog.Logger) http.Handler {
 func newServer(config config.Config, logger zerolog.Logger) *http.Server {
 	mux := newRouter(config, logger)
 	return &http.Server{
-		Addr:         config.Addr,
+		Addr:         config.ServerAddr,
 		Handler:      mux,
 		WriteTimeout: 3 * time.Second,
 		ReadTimeout:  3 * time.Second,
@@ -78,7 +78,7 @@ func main() {
 		}
 	}()
 
-	logger.Info().Msgf("server listening on %s...", config.Addr)
+	logger.Info().Msgf("server listening on %s...", config.ServerAddr)
 	<-stopCtx.Done()
 
 	logger.Info().Msg("shutting down server...")

@@ -1,10 +1,12 @@
 package config
 
+import "github.com/caarlos0/env/v11"
+
 type Config struct {
 	ServiceName string
-	Addr        string
-	BaseURL     string
-	Verbose     bool
+	ServerAddr  string `env:"SERVER_ADDRESS"`
+	BaseURL     string `env:"BASE_URL"`
+	Verbose     bool   `env:"VERBOSE"`
 }
 
 const serviceName = "shortener"
@@ -12,5 +14,7 @@ const serviceName = "shortener"
 func New() Config {
 	config := Config{ServiceName: serviceName}
 	loadFromFlags(&config)
+
+	env.Parse(&config)
 	return config
 }
