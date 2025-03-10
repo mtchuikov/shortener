@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/mtchuikov/shortener/internal/config"
 	"github.com/mtchuikov/shortener/internal/repo"
 )
 
@@ -17,9 +16,9 @@ type Service struct {
 	baseURL string
 }
 
-func New(config config.Config, repo repo.IRepo) *Service {
+func New(baseURL string, repo repo.IRepo) *Service {
 	return &Service{
 		repo:    repo,
-		baseURL: config.BaseURL,
+		baseURL: baseURL,
 	}
 }

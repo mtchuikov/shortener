@@ -29,7 +29,7 @@ func newLogger(config config.Config) zerolog.Logger {
 
 func newHandler(config config.Config, logger zerolog.Logger) *handler.Handler {
 	repo := inmemory.New()
-	service := service.New(config, repo)
+	service := service.New(config.BaseURL, repo)
 	return handler.New(service)
 }
 
