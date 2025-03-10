@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/mtchuikov/shortener/internal/repo/inmemory"
 	"github.com/mtchuikov/shortener/internal/service"
 	"github.com/stretchr/testify/require"
@@ -17,9 +18,9 @@ func TestResolveShortURL_Success(t *testing.T) {
 	service := service.New(baseURL, inmemory.New())
 	handler := New(service)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", handler.CreateShortURL)
-	mux.HandleFunc("/{id}", handler.ResolveShortURL)
+	mux := chi.NewRouter()
+	mux.Post("/", handler.CreateShortURL)
+	mux.Get("/{id}", handler.ResolveShortURL)
 
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -61,8 +62,8 @@ func TestResolveShortURL_Success(t *testing.T) {
 func TestResolveShortURL_InvalidShortURL(t *testing.T) {
 	handler := New(service.New("", inmemory.New()))
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/{id}", handler.ResolveShortURL)
+	mux := chi.NewRouter()
+	mux.Get("/{id}", handler.ResolveShortURL)
 
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -89,8 +90,8 @@ func TestResolveShortURL_ShortURLNotFound(t *testing.T) {
 	baseURL := "http://localhost:3214/api/"
 	handler := New(service.New(baseURL, inmemory.New()))
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/{id}", handler.ResolveShortURL)
+	mux := chi.NewRouter()
+	mux.Get("/{id}", handler.ResolveShortURL)
 
 	server := httptest.NewServer(mux)
 	defer server.Close()

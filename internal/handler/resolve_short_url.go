@@ -1,9 +1,13 @@
 package handler
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+)
 
 func (h *Handler) ResolveShortURL(rw http.ResponseWriter, req *http.Request) {
-	shortURL := req.PathValue("id")
+	shortURL := chi.URLParam(req, "id")
 	originalURL, err := h.service.ResolveShortURL(req.Context(), shortURL)
 	if err != nil {
 		statusCode := serviceErrToStatusCode(err)

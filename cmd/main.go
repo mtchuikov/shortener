@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/mtchuikov/shortener/internal/config"
 	"github.com/mtchuikov/shortener/internal/handler"
 	"github.com/mtchuikov/shortener/internal/repo/inmemory"
@@ -34,13 +36,18 @@ func newHandler(config config.Config, logger zerolog.Logger) *handler.Handler {
 }
 
 func newRouter(config config.Config, logger zerolog.Logger) http.Handler {
-	handler := newHandler(config, logger)
-	mux := http.NewServeMux()
+	mux := chi.NewRouter()
+	mux.Use(middleware.Recoverer)
 
-	mux.HandleFunc("/", middlewares.OnlyMethod(http.MethodPost,
-		handler.CreateShortURL))
-	mux.HandleFunc("/{id}", middlewares.OnlyMethod(http.MethodGet,
-		handler.ResolveShortURL))
+	if config.Verbose {
+		mux.Use(middleware.RequestID)
+		mux.Use(middlewares.ChiVerbose(logger))
+	}
+
+	handler := newHandler(config, logger)
+
+	mux.Post("/", handler.CreateShortURL)
+	mux.Get("/{id}", handler.ResolveShortURL)
 
 	return mux
 }
