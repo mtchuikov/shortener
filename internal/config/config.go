@@ -1,6 +1,10 @@
 package config
 
-import "github.com/caarlos0/env/v11"
+import (
+	"strings"
+
+	"github.com/caarlos0/env/v11"
+)
 
 type Config struct {
 	ServiceName string
@@ -16,5 +20,10 @@ func New() Config {
 	loadFromFlags(&config)
 
 	env.Parse(&config)
+
+	if !strings.HasSuffix(config.BaseURL, "/") {
+		config.BaseURL = config.BaseURL + "/"
+	}
+
 	return config
 }
