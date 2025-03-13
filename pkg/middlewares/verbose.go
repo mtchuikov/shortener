@@ -25,8 +25,8 @@ func ChiVerbose(logger zerolog.Logger) func(http.Handler) http.Handler {
 			event.
 				Str("from", req.RemoteAddr).Str("method", req.Method).
 				Int("status", wrw.Status()).Str("remote", req.RemoteAddr).
-				Str("url", req.RequestURI).Dur("duration", duration).
-				Msg("request completed")
+				Str("url", req.RequestURI).Int("response bytes", wrw.BytesWritten()).
+				Dur("duration", duration).Msg("request completed")
 		}
 
 		return http.HandlerFunc(fn)
