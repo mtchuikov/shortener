@@ -74,11 +74,7 @@ func (h *Handler) CreateShortURL(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rw.WriteHeader(http.StatusCreated)
-
 	if isJSON {
-		rw.Header().Set(httpheaders.ContentType, httpheaders.ApplicationJSON)
-
 		respBody := CreateShortURLResponse{Result: shortURL}
 		payload, err := json.Marshal(&respBody)
 		if err != nil {
@@ -87,9 +83,13 @@ func (h *Handler) CreateShortURL(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 
+		rw.Header().Set(httpheaders.ContentType, httpheaders.ApplicationJSON)
+		rw.WriteHeader(http.StatusCreated)
 		rw.Write(payload)
+
 		return
 	}
 
+	rw.WriteHeader(http.StatusCreated)
 	rw.Write([]byte(shortURL))
 }

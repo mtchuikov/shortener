@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/mtchuikov/shortener/pkg/httpheaders"
 )
 
 func (h *Handler) ResolveShortURL(rw http.ResponseWriter, req *http.Request) {
@@ -15,6 +16,6 @@ func (h *Handler) ResolveShortURL(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rw.Header().Set("Location", originalURL)
+	rw.Header().Set(httpheaders.Location, originalURL)
 	rw.WriteHeader(http.StatusTemporaryRedirect)
 }
