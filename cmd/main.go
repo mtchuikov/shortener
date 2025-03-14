@@ -30,8 +30,8 @@ func newLogger(config config.Config) zerolog.Logger {
 }
 
 func newHandler(config config.Config, logger zerolog.Logger) *handler.Handler {
-	repo := inmemory.New()
-	service := service.New(config.BaseURL, repo)
+	inmemory := inmemory.New()
+	service := service.New(config.BaseURL, inmemory)
 	return handler.New(service)
 }
 
@@ -48,6 +48,7 @@ func newRouter(config config.Config, logger zerolog.Logger) http.Handler {
 
 	mux.Post("/", handler.CreateShortURL)
 	mux.Get("/{id}", handler.ResolveShortURL)
+	mux.Post("/api/shorten", handler.CreateShortURL)
 
 	return mux
 }
