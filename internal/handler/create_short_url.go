@@ -63,8 +63,7 @@ func (h *Handler) CreateShortURL(rw http.ResponseWriter, req *http.Request) {
 
 	err = initialValidateURL(originalURL)
 	if err != nil {
-		msg := ErrNoURLProvided.Error()
-		http.Error(rw, msg, http.StatusBadRequest)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 
