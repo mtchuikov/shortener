@@ -1,33 +1,37 @@
 # shortener
-Сервис для создания укороченных ссылок.
+This service can generate short URLs for you.
 
-- [ ] Добавить кастомную структуру для работы с ошибками, чтобы можно было передавать их между слоями и логгировать на верхнем уровне в слое handler.
-- [ ] Добавить документацию для API в соответствии со спецификацией OpenAPI. На базе спецификации сгенерировать код для клиента / сервера при помощи https://github.com/oapi-codegen/oapi-codegen#impl-echo
- 
+TODO:
 
-## Загрузка
+- [ ] Improve error handling 
 
-* Загрузите последнюю версию бинарного файла со страницы релизов. Также можете воспользоваться командой для скачивания:
+## Downloads
+
+* Download the latest version of the binary from the releases page. You can also use the following command to download it:
 ```
 TODO
 ```
-* Или загрузити образ Docker из репозитория и запустите его:
+* Or pull the Docker image from the repository:
 ```
 docker pull ghcr.io/mtchuikov/shortener:latest
 ```
-* Или загрузите исходный код и выполните компиляцию самостоятельно
+* Or download the source code and compile it:
 ```
 git clone https://github.com/mtchuikov/shortener
 go build -ldflags="-s -w" -o ./build/shortener ./cmd/main.go
 ```
 
-## Конфигурация
+## Config
 
-В настоящий момент поддерживается настройка поведения программы при помощи флагов командной строки. В следующих версиях будет добавлена настройка конфигурации при помощи файла.
+The program's behavior can be configured using command-line flags. Here is an overview of supported flags:
 
-| Флаг           | Краткое обозначение | Значение по умолчанию   | Описание |
-|----------------|---------------------|-------------------------|-|
-| `--addr`| `-a` | `127.0.0.1:8080` | Адрес сервера |
-| `--base` | `-b` | `http://127.0.0.1:8080/` | Базовый URL для сокращённых ссылок |
-| `--verbose` | `-v` | `false` | Вывод подробных логов |
-| `--help` | `-h` | | Вывод информации о доступных командах |
+| Flag | Shorthand | Default value | Description |
+|------|-----------|---------------|-------------|
+| `--server-addr`| `-a` | `127.0.0.1:8080` | Specify the IP address and port for the server to listen on |
+| `--base-url` | `-b` | `http://127.0.0.1:8080/` | Define the base URL used to generate shortened links |
+| `--verbose` | `-v` | `false` | Enable verbose logging at the debug level. Overrides the log-level flag to 'debug' |
+| `--help` | `-h` | | Print information about supported flags |
+
+## Endpoints
+
+TODO

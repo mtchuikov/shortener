@@ -5,14 +5,21 @@ import (
 )
 
 var (
-	serverAddrFlag = pflag.StringP("addr", "a", "127.0.0.1:8080", "server address")
-	baseURLFlag    = pflag.StringP("base", "b", "http://127.0.0.1:8080", "base url for shortened links")
-	verboseFlag    = pflag.BoolP("verbose", "v", false, "print verbose logs")
+	serverAddrFlagDesc = "Specify the IP address and port for the server to listen on"
+	serverAddrFlag     = pflag.StringP("server-addr", "a", "127.0.0.1:8080", serverAddrFlagDesc)
+
+	baseURLFlagDesc = "Define the base URL used to generate shortened links"
+	baseURLFlag     = pflag.StringP("base-url", "b", "http://127.0.0.1:8080/", baseURLFlagDesc)
+
+	verboseFlagDesc = "Enable verbose logging at the debug level. Overrides the log-level flag to 'debug'"
+	verboseFlag     = pflag.BoolP("verbose", "v", false, verboseFlagDesc)
 )
 
-func loadFromFlags(config *Config) {
+func (c *Config) loadFromFlags() {
+	pflag.CommandLine.SortFlags = false
 	pflag.Parse()
-	config.ServerAddr = *serverAddrFlag
-	config.BaseURL = *baseURLFlag
-	config.Verbose = *verboseFlag
+
+	c.ServerAddr = *serverAddrFlag
+	c.BaseURL = *baseURLFlag
+	c.Verbose = *verboseFlag
 }

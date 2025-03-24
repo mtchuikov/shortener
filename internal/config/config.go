@@ -1,8 +1,6 @@
 package config
 
 import (
-	"strings"
-
 	"github.com/caarlos0/env/v11"
 )
 
@@ -13,17 +11,12 @@ type Config struct {
 	Verbose     bool   `env:"VERBOSE"`
 }
 
-const serviceName = "shortener"
-
 func New() Config {
+	const serviceName = "shortener"
 	config := Config{ServiceName: serviceName}
-	loadFromFlags(&config)
 
+	config.loadFromFlags()
 	env.Parse(&config)
-
-	if !strings.HasSuffix(config.BaseURL, "/") {
-		config.BaseURL = config.BaseURL + "/"
-	}
 
 	return config
 }
