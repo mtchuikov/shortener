@@ -91,7 +91,7 @@ func TestDecompress_Gzip(t *testing.T) {
 	testDecompress_Success(t, gz, &body, "gzip")
 }
 
-func testDecompress_InvalidBody(
+func testDecompressInvalidBody(
 	t *testing.T,
 	contentEncoding string,
 ) {
@@ -118,9 +118,9 @@ func testDecompress_InvalidBody(
 }
 
 func TestDecompress_InvalidDeflate(t *testing.T) {
-	testDecompress_InvalidBody(t, "deflate")
+	testDecompressInvalidBody(t, "deflate")
 }
 
 func TestDecompress_InvalidGzip(t *testing.T) {
-	testDecompress_InvalidBody(t, "gzip")
+	testDecompressInvalidBody(t, "gzip")
 }

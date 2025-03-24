@@ -1,6 +1,8 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/caarlos0/env/v11"
 )
 
@@ -17,6 +19,11 @@ func New() Config {
 
 	config.loadFromFlags()
 	env.Parse(&config)
+
+	hasSlash := strings.HasSuffix(config.BaseURL, "/")
+	if !hasSlash {
+		config.BaseURL = config.BaseURL + "/"
+	}
 
 	return config
 }
