@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -50,13 +51,13 @@ func (h *shortener) extractURL(body io.Reader, isJSON bool) (string, error) {
 	}
 
 	if isJSON {
-		var json shortenerRequest
-		err = jsoniter.Unmarshal(payload, &json)
+		var data shortenerRequest
+		err = json.Unmarshal(payload, &data)
 		if err != nil {
 			return "", ErrFailedToUnmarshalJSON
 		}
 
-		return json.URL, nil
+		return data.URL, nil
 	}
 
 	url := string(payload)

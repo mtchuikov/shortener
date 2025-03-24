@@ -41,7 +41,7 @@ func TestDecompress_NoCompression(t *testing.T) {
 	require.Equalf(t, http.StatusOK, rr.Code, errMsg, rr.Code)
 }
 
-func testDecompress_Success(
+func testDecompressSuccess(
 	t *testing.T,
 	w io.WriteCloser, body *bytes.Buffer,
 	contentEncoding string,
@@ -82,13 +82,13 @@ func testDecompress_Success(
 func TestDecompress_Deflate(t *testing.T) {
 	var body bytes.Buffer
 	zl := zlib.NewWriter(&body)
-	testDecompress_Success(t, zl, &body, "deflate")
+	testDecompressSuccess(t, zl, &body, "deflate")
 }
 
 func TestDecompress_Gzip(t *testing.T) {
 	var body bytes.Buffer
 	gz := gzip.NewWriter(&body)
-	testDecompress_Success(t, gz, &body, "gzip")
+	testDecompressSuccess(t, gz, &body, "gzip")
 }
 
 func testDecompressInvalidBody(
