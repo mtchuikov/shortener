@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/mtchuikov/shortener/pkg/middlewares"
 	"github.com/rs/zerolog"
 )
 
@@ -32,12 +32,9 @@ func RegisterShortener(lg zerolog.Logger, mux *chi.Mux, srv shortenerService) {
 	mux.Post("/api/shorten", handler.Handle)
 }
 
-var (
-	ErrFailedToReadBody      = errors.New("failed to read body")
-	ErrFailedToUnmarshalJSON = errors.New("failed to unmarshal json")
-)
-
 func (h *shortener) extractURL(body io.Reader, isJSON bool) (string, error) {
+	const op = "handler.shortener.extract_url"
+
 	const limit = 2048 + 1
 	// for plain text requests, the url can occupy the full 2048 bytes
 	// since the body contains only the url, but for json requests, the
@@ -47,17 +44,23 @@ func (h *shortener) extractURL(body io.Reader, isJSON bool) (string, error) {
 
 	payload, err := io.ReadAll(lr)
 	if err != nil {
-		return "", ErrFailedToReadBody
+		return "", fmt.Errorf(
+			"%s - %w: %s",
+			op, errFailedToReadBody, err,
+		)
 	}
 
 	if isJSON {
-		var data shortenerRequest
-		err = json.Unmarshal(payload, &data)
+		var json shortenerRequest
+		err = jsoniter.Unmarshal(payload, &json)
 		if err != nil {
-			return "", ErrFailedToUnmarshalJSON
+			return "", fmt.Errorf(
+				"%s - %w: %s",
+				op, errFailedToUnmarshalJSON, err,
+			)
 		}
 
-		return data.URL, nil
+		return json.URL, nil
 	}
 
 	url := string(payload)
@@ -73,19 +76,28 @@ type shortenerResponse struct {
 }
 
 func (h *shortener) Handle(rw http.ResponseWriter, req *http.Request) {
+	const op = "handler.shortener.handle"
+
 	ct := req.Header.Get("Content-Type")
 	isJSON := ct == "application/json"
 
+	ctx := req.Context()
+
 	url, err := h.extractURL(req.Body, isJSON)
 	if err != nil {
-		http.Error(rw, err.Error(), http.StatusBadRequest)
+		middlewares.RequestContextWithError(req, err)
+
+		errMsg := errors.Unwrap(err).Error()
+		http.Error(rw, errMsg, http.StatusBadRequest)
 		return
 	}
 
-	shortURL, err := h.service.Serve(req.Context(), url)
+	shortURL, err := h.service.Serve(ctx, url)
 	if err != nil {
-		fmt.Println(err)
-		http.Error(rw, err.Error(), http.StatusBadRequest)
+		middlewares.RequestContextWithError(req, err)
+
+		errMsg := errors.Unwrap(err).Error()
+		http.Error(rw, errMsg, http.StatusBadRequest)
 		return
 	}
 
@@ -93,7 +105,13 @@ func (h *shortener) Handle(rw http.ResponseWriter, req *http.Request) {
 		json := shortenerResponse{Result: shortURL}
 		payload, err := jsoniter.Marshal(&json)
 		if err != nil {
-			errMsg := "failed to marshal json"
+			err = fmt.Errorf(
+				"%s - %w: %s",
+				op, errFailedToMarshalJSON, err,
+			)
+			middlewares.RequestContextWithError(req, err)
+
+			errMsg := errFailedToMarshalJSON.Error()
 			http.Error(rw, errMsg, http.StatusInternalServerError)
 			return
 		}

@@ -10,6 +10,7 @@ type Config struct {
 	ServiceName string
 	ServerAddr  string `env:"SERVER_ADDRESS"`
 	BaseURL     string `env:"BASE_URL"`
+	FileStorage string `env:"FILE_STORAGE_PATH"`
 	Verbose     bool   `env:"VERBOSE"`
 }
 

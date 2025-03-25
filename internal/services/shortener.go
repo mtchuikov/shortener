@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"regexp"
 
 	"github.com/mtchuikov/shortener/pkg/randtools"
@@ -23,18 +23,18 @@ type shortener struct {
 func NewShortener(baseURL string, cache shortenerCache) *shortener {
 	return &shortener{
 		baseURL:   baseURL,
-		urlRegexp: regexp.MustCompile(`^(http|https)://[^:/\s]+`),
+		urlRegexp: regexp.MustCompile(`^(http://|https://)[a-zA-Z0-9]+([-.][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}(:[0-9]{1,5})?(/.*)?$`),
 		idgen:     randtools.NewStringGenerator(),
 		cache:     cache,
 	}
 }
 
-var ErrInvalidURL = errors.New("invalid url")
-
 func (s *shortener) validateURL(url string) error {
+	const op = "service.shortener.validate_url"
+
 	isValid := s.urlRegexp.MatchString(url)
 	if !isValid {
-		return ErrInvalidURL
+		return fmt.Errorf("%s - %w", op, ErrInvalidURL)
 	}
 
 	return nil

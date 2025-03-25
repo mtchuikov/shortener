@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/mtchuikov/shortener/pkg/middlewares"
 	"github.com/rs/zerolog"
 )
 
@@ -27,10 +29,15 @@ func RegisterResolver(lg zerolog.Logger, mux *chi.Mux, srv resolverService) {
 }
 
 func (h *resolver) Handle(rw http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
 	id := chi.URLParam(req, "short_id")
-	url, err := h.service.Serve(req.Context(), id)
+
+	url, err := h.service.Serve(ctx, id)
 	if err != nil {
-		http.Error(rw, err.Error(), http.StatusBadRequest)
+		middlewares.RequestContextWithError(req, err)
+
+		errMsg := errors.Unwrap(err).Error()
+		http.Error(rw, errMsg, http.StatusBadRequest)
 		return
 	}
 

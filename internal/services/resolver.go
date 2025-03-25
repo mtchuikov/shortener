@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"regexp"
 )
 
@@ -24,20 +24,20 @@ func NewResolver(baseURL string, cache resolverCache) *resolver {
 	}
 }
 
-var ErrInvalidID = errors.New("invalid id")
-
 func (s *resolver) validateID(id string) error {
+	const op = "service.resolver.validate_id"
+
 	isValid := s.idRegexp.MatchString(id)
 	if !isValid {
-		return ErrInvalidID
+		return fmt.Errorf("%s - %w", op, ErrInvalidID)
 	}
 
 	return nil
 }
 
-var ErrIDNotFound = errors.New("id not found")
-
 func (s *resolver) Serve(ctx context.Context, id string) (string, error) {
+	const op = "service.resolver.serve"
+
 	err := s.validateID(id)
 	if err != nil {
 		return "", err
@@ -49,7 +49,7 @@ func (s *resolver) Serve(ctx context.Context, id string) (string, error) {
 	}
 
 	if url == "" {
-		return "", ErrIDNotFound
+		return "", fmt.Errorf("%s - %w", op, ErrURLNotFound)
 	}
 
 	return url, err

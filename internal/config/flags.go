@@ -11,6 +11,9 @@ var (
 	baseURLFlagDesc = "Define the base URL used to generate shortened links"
 	baseURLFlag     = pflag.StringP("base-url", "b", "http://127.0.0.1:8080/", baseURLFlagDesc)
 
+	fileStorageDesc = "Path to the JSON file for storing shorten URLs and its identifiers"
+	fileStorageFlag = pflag.StringP("file-storage", "f", "cache.storage", fileStorageDesc)
+
 	verboseFlagDesc = "Enable verbose logging at the debug level. Overrides the log-level flag to 'debug'"
 	verboseFlag     = pflag.BoolP("verbose", "v", false, verboseFlagDesc)
 )
@@ -21,5 +24,6 @@ func (c *Config) loadFromFlags() {
 
 	c.ServerAddr = *serverAddrFlag
 	c.BaseURL = *baseURLFlag
+	c.FileStorage = *fileStorageFlag
 	c.Verbose = *verboseFlag
 }

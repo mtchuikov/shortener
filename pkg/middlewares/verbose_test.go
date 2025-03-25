@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -23,10 +24,13 @@ func TestVerbose(t *testing.T) {
 		mockResponseContentLenght = 13
 	)
 
+	var mockError = errors.New("context error")
+
 	req := httptest.NewRequest(mockMethod, mockURL, nil)
 	req.Header.Set("User-Agent", mockUserAgent)
 	req.Header.Set("Referer", mockReferer)
 	req.RemoteAddr = mockRemoteAddr
+	RequestContextWithError(req, mockError)
 
 	handler := func(rw http.ResponseWriter, req *http.Request) {
 		rw.WriteHeader(mockResponseStatus)
@@ -44,6 +48,7 @@ func TestVerbose(t *testing.T) {
 	middleware.ServeHTTP(rr, req)
 
 	output := logBuf.String()
+
 	assert.Contains(t, output, fmt.Sprintf(`"method":"%v"`, mockMethod))
 	assert.Contains(t, output, fmt.Sprintf(`"url":"%v"`, mockURL))
 	assert.Contains(t, output, fmt.Sprintf(`"remote_addr":"%v`, mockRemoteAddr))
@@ -52,4 +57,5 @@ func TestVerbose(t *testing.T) {
 	assert.Contains(t, output, fmt.Sprintf(`"size":%v`, mockResponseContentLenght))
 	assert.Contains(t, output, fmt.Sprintf(`"referer":"%v"`, mockReferer))
 	assert.Contains(t, output, `"duration":`)
+	assert.Contains(t, output, fmt.Sprintf(`"error":"%s"`, mockError))
 }

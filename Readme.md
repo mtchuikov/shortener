@@ -4,6 +4,7 @@ This service can generate short URLs for you.
 TODO:
 
 - [ ] Improve error handling 
+- [ ] Add more tests
 
 ## Downloads
 

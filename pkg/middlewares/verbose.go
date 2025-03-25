@@ -33,7 +33,8 @@ func (r *verboseResponseWriter) WriteHeader(statusCode int) {
 // user-agent, referer, response status code, duration of
 // request processing, and response size. This middleware is
 // useful for detailed monitoring and debugging of HTTP
-// requests and their handling behavior within the service.
+// requests and their handling behavior within the service. Do not
+// forget to set the logging level to 'debug' before use.
 func Verbose(logger zerolog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(rw http.ResponseWriter, req *http.Request) {
@@ -51,7 +52,7 @@ func Verbose(logger zerolog.Logger) func(http.Handler) http.Handler {
 			next.ServeHTTP(&vrw, req)
 			duration := time.Since(start)
 
-			logger.Info().
+			log := logger.Debug().
 				Str("method", req.Method).
 				Str("url", req.URL.String()).
 				Str("remote_addr", req.RemoteAddr).
@@ -59,8 +60,14 @@ func Verbose(logger zerolog.Logger) func(http.Handler) http.Handler {
 				Int("status", respData.status).
 				Dur("duration", duration).
 				Int("size", respData.size).
-				Str("referer", req.Referer()).
-				Msg("http request handled")
+				Str("referer", req.Referer())
+
+			err := errorFromRequestContext(req.Context())
+			if err != nil {
+				log.Err(err)
+			}
+
+			log.Send()
 		}
 
 		return http.HandlerFunc(fn)
