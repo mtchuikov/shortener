@@ -46,9 +46,7 @@ func New(backupFile string) (*cache, error) {
 
 	return cache, nil
 }
-
 func (c *cache) Close(_ context.Context) error {
-	c.file.Close()
 	return nil
 }
 

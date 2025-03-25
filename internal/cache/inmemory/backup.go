@@ -2,9 +2,8 @@ package inmemory
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
-
-	jsoniter "github.com/json-iterator/go"
 )
 
 type backupRecord struct {
@@ -15,35 +14,33 @@ type backupRecord struct {
 func (c *cache) backup(url, id string) error {
 	const op = "cache.inmemory.cache.backup"
 
-	for id, url := range c.urls {
-		record := backupRecord{
-			ID:  id,
-			URL: url,
-		}
+	record := backupRecord{
+		ID:  id,
+		URL: url,
+	}
 
-		payload, err := jsoniter.Marshal(record)
-		if err != nil {
-			return fmt.Errorf(
-				"%s - %w: %v",
-				op, ErrFailedToMarshalBackupRecord, err,
-			)
-		}
+	payload, err := json.Marshal(record)
+	if err != nil {
+		return fmt.Errorf(
+			"%s - %w: %v",
+			op, ErrFailedToMarshalBackupRecord, err,
+		)
+	}
 
-		_, err = c.file.Write(payload)
-		if err != nil {
-			return fmt.Errorf(
-				"%s - %w: %v",
-				op, ErrFailedToWriteBackup, err,
-			)
-		}
+	_, err = c.file.Write(payload)
+	if err != nil {
+		return fmt.Errorf(
+			"%s - %w: %v",
+			op, ErrFailedToWriteBackup, err,
+		)
+	}
 
-		_, err = c.file.Write([]byte("\n"))
-		if err != nil {
-			return fmt.Errorf(
-				"%s - %w: %v",
-				op, ErrFailedToWriteBackup, err,
-			)
-		}
+	_, err = c.file.Write([]byte("\n"))
+	if err != nil {
+		return fmt.Errorf(
+			"%s - %w: %v",
+			op, ErrFailedToWriteBackup, err,
+		)
 	}
 
 	return nil
@@ -66,7 +63,7 @@ func (c *cache) restoreBackup() error {
 			)
 		}
 
-		err = jsoniter.Unmarshal(payload, &record)
+		err = json.Unmarshal(payload, &record)
 		if err != nil {
 			return fmt.Errorf(
 				"%s - %w: %v",

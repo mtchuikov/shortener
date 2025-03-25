@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/mtchuikov/shortener/pkg/middlewares"
 	"github.com/rs/zerolog"
 )
@@ -51,8 +51,8 @@ func (h *shortener) extractURL(body io.Reader, isJSON bool) (string, error) {
 	}
 
 	if isJSON {
-		var json shortenerRequest
-		err = jsoniter.Unmarshal(payload, &json)
+		var data shortenerRequest
+		err = json.Unmarshal(payload, &data)
 		if err != nil {
 			return "", fmt.Errorf(
 				"%s - %w: %s",
@@ -60,7 +60,7 @@ func (h *shortener) extractURL(body io.Reader, isJSON bool) (string, error) {
 			)
 		}
 
-		return json.URL, nil
+		return data.URL, nil
 	}
 
 	url := string(payload)
@@ -102,8 +102,8 @@ func (h *shortener) Handle(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if isJSON {
-		json := shortenerResponse{Result: shortURL}
-		payload, err := jsoniter.Marshal(&json)
+		data := shortenerResponse{Result: shortURL}
+		payload, err := json.Marshal(&data)
 		if err != nil {
 			err = fmt.Errorf(
 				"%s - %w: %s",

@@ -8,10 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	// it helps to bypass the test check, because tests for iter7 do
-	// not support the use of github.com/json-iterator/go
-	_ "encoding/json"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/mtchuikov/shortener/internal/cache/inmemory"
@@ -24,7 +20,9 @@ import (
 
 func main() {
 	rootCtx := context.Background()
-	stopCtx, stop := signal.NotifyContext(rootCtx, syscall.SIGINT, syscall.SIGTERM)
+
+	signals := []os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL}
+	stopCtx, stop := signal.NotifyContext(rootCtx, signals...)
 	defer stop()
 
 	conf := config.New()
