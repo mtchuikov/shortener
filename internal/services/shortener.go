@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/mtchuikov/shortener/pkg/randtools"
+	"github.com/mtchuikov/shortener/pkg/strgen"
 )
 
 type shortenerCache interface {
@@ -16,7 +16,7 @@ type shortenerCache interface {
 type shortener struct {
 	baseURL   string
 	urlRegexp *regexp.Regexp
-	idgen     *randtools.StringGenerator
+	idgen     *strgen.Generator
 	cache     shortenerCache
 }
 
@@ -24,7 +24,7 @@ func NewShortener(baseURL string, cache shortenerCache) *shortener {
 	return &shortener{
 		baseURL:   baseURL,
 		urlRegexp: regexp.MustCompile(`^(http://|https://)[a-zA-Z0-9]+([-.][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}(:[0-9]{1,5})?(/.*)?$`),
-		idgen:     randtools.NewStringGenerator(),
+		idgen:     strgen.New(),
 		cache:     cache,
 	}
 }

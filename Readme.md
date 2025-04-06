@@ -30,6 +30,7 @@ The program's behavior can be configured using command-line flags. Here is an ov
 |------|-----------|---------------|-------------|
 | `--server-addr`| `-a` | `127.0.0.1:8080` | Specify the IP address and port for the server to listen on |
 | `--base-url` | `-b` | `http://127.0.0.1:8080/` | Define the base URL used to generate shortened links |
+| `--dsn` | `-d` | `postgres://user:password@127.0.0.1:5432/postgres?sslmode=disable` |  Define the database DSN (Data Source Name) used to connect to the database |
 | `--verbose` | `-v` | `false` | Enable verbose logging at the debug level. Overrides the log-level flag to 'debug' |
 | `--help` | `-h` | | Print information about supported flags |
 

@@ -10,13 +10,13 @@ type Config struct {
 	ServiceName string
 	ServerAddr  string `env:"SERVER_ADDRESS"`
 	BaseURL     string `env:"BASE_URL"`
+	DatabaseDSN string `env:"DATABASE_DSN"`
 	FileStorage string `env:"FILE_STORAGE_PATH"`
 	Verbose     bool   `env:"VERBOSE"`
 }
 
 func New() Config {
-	const serviceName = "shortener"
-	config := Config{ServiceName: serviceName}
+	config := Config{ServiceName: "shortener"}
 
 	config.loadFromFlags()
 	env.Parse(&config)
