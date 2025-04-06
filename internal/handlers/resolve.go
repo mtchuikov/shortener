@@ -19,10 +19,10 @@ type resolver struct {
 	service resolverService
 }
 
-func RegisterResolver(lg zerolog.Logger, mux *chi.Mux, srv resolverService) {
+func RegisterResolver(logger zerolog.Logger, mux *chi.Mux, service resolverService) {
 	handler := resolver{
-		logger:  lg,
-		service: srv,
+		logger:  logger,
+		service: service,
 	}
 
 	mux.Get("/{short_id}", handler.Handle)

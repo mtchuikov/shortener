@@ -22,10 +22,10 @@ type shortener struct {
 	service shortenerService
 }
 
-func RegisterShortener(lg zerolog.Logger, mux *chi.Mux, srv shortenerService) {
+func RegisterShortener(logger zerolog.Logger, mux *chi.Mux, service shortenerService) {
 	handler := shortener{
-		logger:  lg,
-		service: srv,
+		logger:  logger,
+		service: service,
 	}
 
 	mux.Post("/", handler.Handle)
