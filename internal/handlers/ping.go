@@ -4,22 +4,21 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mtchuikov/shortener/pkg/pinger"
 )
 
-type ping struct {
-	pinger *pinger.Pinger
+type pingerService interface {
+	Error() error
 }
 
-func RegisterPing(mux *chi.Mux, pinger *pinger.Pinger) {
-	handler := ping{pinger}
-	mux.Get("/ping", handler.Handle)
+func RegisterPinger(router chi.Router, pinger pingerService) {
+	router.Get("/ping", handlePing(pinger))
 }
 
-func (h *ping) Handle(rw http.ResponseWriter, req *http.Request) {
-	err := h.pinger.Error()
-	if err != nil {
-		errMsg := "failed to ping postgres"
-		http.Error(rw, errMsg, http.StatusInternalServerError)
+func handlePing(service pingerService) http.HandlerFunc {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		if service.Error() != nil {
+			errMsg := "failed to ping postgres"
+			http.Error(rw, errMsg, http.StatusInternalServerError)
+		}
 	}
 }

@@ -8,12 +8,14 @@ import (
 
 const DefaultMaxConcurrent = 5
 
+var c *closer = nil
+
 type Task struct {
 	Sync bool
 	Fn   func(context.Context)
 }
 
-type Closer struct {
+type closer struct {
 	mu            sync.Mutex
 	tasks         []Task
 	numTasks      int
@@ -21,8 +23,8 @@ type Closer struct {
 	maxConcurrent int
 }
 
-func New(opts ...Option) *Closer {
-	c := &Closer{
+func Init(opts ...Option) {
+	c = &closer{
 		mu:            sync.Mutex{},
 		tasks:         make([]Task, 0, 3),
 		closeOnce:     sync.Once{},
@@ -33,10 +35,9 @@ func New(opts ...Option) *Closer {
 		opt(c)
 	}
 
-	return c
 }
 
-func (c *Closer) Reset() {
+func Reset() {
 	c.mu.Lock()
 	c.tasks = make([]Task, 0, 3)
 	c.numTasks = 0
@@ -44,14 +45,14 @@ func (c *Closer) Reset() {
 	c.mu.Unlock()
 }
 
-func (c *Closer) Add(task Task) {
+func Add(task Task) {
 	c.mu.Lock()
 	c.numTasks++
 	c.tasks = append(c.tasks, task)
 	c.mu.Unlock()
 }
 
-func (c *Closer) AddWithPriority(task Task, priority int) {
+func AddWithPriority(priority int, task Task) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -69,7 +70,7 @@ func (c *Closer) AddWithPriority(task Task, priority int) {
 	c.tasks = slices.Insert(c.tasks, priority, task)
 }
 
-func (c *Closer) Close(ctx context.Context) error {
+func Close(ctx context.Context) error {
 	var err error
 	closeFn := func() {
 		sem := make(chan struct{}, c.maxConcurrent)
@@ -84,35 +85,36 @@ func (c *Closer) Close(ctx context.Context) error {
 			}
 
 			wg.Add(1)
+			doneFn := func() {
+				wg.Done()
+				<-sem
+			}
 
 			if task.Sync {
 				task.Fn(ctx)
+				doneFn()
 				continue
 			}
 
 			go func() {
-				defer func() {
-					wg.Done()
-					<-sem
-				}()
-
 				task.Fn(ctx)
+				doneFn()
 			}()
 		}
 
 		close(sem)
 
-		done := make(chan struct{})
+		waitTillDone := make(chan struct{})
 		go func() {
 			wg.Wait()
-			close(done)
+			close(waitTillDone)
 		}()
 
 		select {
 		case <-ctx.Done():
 			err = ctx.Err()
 			return
-		case <-done:
+		case <-waitTillDone:
 		}
 	}
 

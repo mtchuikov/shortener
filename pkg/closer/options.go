@@ -1,9 +1,9 @@
 package closer
 
-type Option func(*Closer)
+type Option func(*closer)
 
 func WithMaxConcurrent(max int) Option {
-	return func(c *Closer) {
+	return func(c *closer) {
 		c.maxConcurrent = max
 	}
 }

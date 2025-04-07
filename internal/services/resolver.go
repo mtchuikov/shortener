@@ -2,55 +2,56 @@ package services
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"regexp"
 )
 
-type resolverCache interface {
-	GetURL(ctx context.Context, id string) (string, error)
+type resolverRepo interface {
+	GetOriginalURL(ctx context.Context, shortID string) (string, error)
 }
 
 type resolver struct {
-	baseURL  string
-	idRegexp *regexp.Regexp
-	cache    resolverCache
+	shortIDRegexp *regexp.Regexp
+	repo          resolverRepo
 }
 
-func NewResolver(baseURL string, cache resolverCache) *resolver {
+func NewResolver(repo resolverRepo) *resolver {
 	return &resolver{
-		baseURL:  baseURL,
-		idRegexp: regexp.MustCompile(`^[A-Za-z0-9]{8}$`),
-		cache:    cache,
+		shortIDRegexp: regexp.MustCompile(`^[A-Za-z0-9]{8}$`),
+		repo:          repo,
 	}
 }
 
-func (s *resolver) validateID(id string) error {
-	const op = "service.resolver.validate_id"
+var ErrInvalidShortID = errors.New("invalid short id")
 
-	isValid := s.idRegexp.MatchString(id)
+func (s *resolver) validateID(id string) error {
+	isValid := s.shortIDRegexp.MatchString(id)
 	if !isValid {
-		return fmt.Errorf("%s - %w", op, ErrInvalidID)
+		return ErrInvalidShortID
 	}
 
 	return nil
 }
 
-func (s *resolver) Serve(ctx context.Context, id string) (string, error) {
-	const op = "service.resolver.serve"
+var (
+	ErrFailedToGetOriginalURL = errors.New("failed to get original url")
+	ErrOriginalURLNotFound    = errors.New("original url not found")
+)
 
-	err := s.validateID(id)
+func (s *resolver) Serve(ctx context.Context, shortID string) (string, error) {
+	err := s.validateID(shortID)
 	if err != nil {
 		return "", err
 	}
 
-	url, err := s.cache.GetURL(ctx, id)
+	originalURL, err := s.repo.GetOriginalURL(ctx, shortID)
 	if err != nil {
-		return "", err
+		return "", ErrFailedToGetOriginalURL
 	}
 
-	if url == "" {
-		return "", fmt.Errorf("%s - %w", op, ErrURLNotFound)
+	if originalURL == "" {
+		return "", ErrOriginalURLNotFound
 	}
 
-	return url, err
+	return originalURL, nil
 }

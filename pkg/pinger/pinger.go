@@ -73,11 +73,10 @@ func (p *Pinger) Ping(ctx context.Context, timeout time.Duration) {
 			p.mu.Unlock()
 
 			cancel()
-
 			if err != nil {
 				p.log.Debug().
 					Err(err).
-					Msg("failed to ping")
+					Msg("ping error occurred")
 
 				p.err = err
 				p.chsub.Notify(ctx, err)
@@ -123,5 +122,6 @@ func (p *Pinger) Close(ctx context.Context) error {
 	}
 
 	p.closeOnce.Do(closeFn)
+
 	return nil
 }

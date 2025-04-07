@@ -1,8 +1,6 @@
 package config
 
-import (
-	"github.com/spf13/pflag"
-)
+import "github.com/spf13/pflag"
 
 var (
 	serverAddrFlagDesc = "Specify the IP address and port for the server to listen on"
@@ -15,19 +13,19 @@ var (
 	databaseDSNFlag = pflag.StringP("dsn", "d", "postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable", databaseDSNDesc)
 
 	fileStorageDesc = "Path to the JSON file for storing shorten URLs and its identifiers"
-	fileStorageFlag = pflag.StringP("file-storage", "f", "cache.storage", fileStorageDesc)
+	fileStorageFlag = pflag.StringP("file-storage", "f", "shorten-urls", fileStorageDesc)
 
 	verboseFlagDesc = "Enable verbose logging at the debug level. Overrides the log-level flag to 'debug'"
 	verboseFlag     = pflag.BoolP("verbose", "v", false, verboseFlagDesc)
 )
 
-func (c *Config) loadFromFlags() {
+func (c *config) loadFromFlags() {
 	pflag.CommandLine.SortFlags = false
 	pflag.Parse()
 
-	c.ServerAddr = *serverAddrFlag
-	c.BaseURL = *baseURLFlag
-	c.DatabaseDSN = *databaseDSNFlag
-	c.FileStorage = *fileStorageFlag
-	c.Verbose = *verboseFlag
+	c.serverAddr = *serverAddrFlag
+	c.baseURL = *baseURLFlag
+	c.databaseDSN = *databaseDSNFlag
+	c.fileStorage = *fileStorageFlag
+	c.verbose = *verboseFlag
 }
