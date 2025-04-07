@@ -88,22 +88,23 @@ func (a *app) newHandler(ctx context.Context) http.Handler {
 		err  error
 	)
 
+	postgres := postgres.New(a.pgxConn)
+	err = postgres.CreateTable(ctx)
+	if err != nil {
+		a.log.Fatal().Err(err).
+			Msg("failed to create postgres tables")
+	}
+
+	inmemory, err := inmemory.New(config.FileStorage())
+	if err != nil {
+		a.log.Fatal().Err(err).
+			Msg("failed to setup inmemory repo")
+	}
+
 	if config.DatabaseDSN() != "" {
-		postgres := postgres.New(a.pgxConn)
-		err = postgres.CreateTable(ctx)
-		if err != nil {
-			a.log.Fatal().Err(err).
-				Msg("failed to create postgres tables")
-		}
-
 		repo = postgres
-
 	} else {
-		repo, err = inmemory.New(config.FileStorage())
-		if err != nil {
-			a.log.Fatal().Err(err).
-				Msg("failed to setup inmemory repo")
-		}
+		repo = inmemory
 	}
 
 	shortener := services.NewShortener(config.BaseURL(), repo)
