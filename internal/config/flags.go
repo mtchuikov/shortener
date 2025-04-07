@@ -10,7 +10,7 @@ var (
 	baseURLFlag     = pflag.StringP("base-url", "b", "http://127.0.0.1:8080/", baseURLFlagDesc)
 
 	databaseDSNDesc = "Define the database DSN (Data Source Name) used to connect to the database"
-	databaseDSNFlag = pflag.StringP("dsn", "d", "postgres://user:password@127.0.0.1:5432/postgres?sslmode=disable", databaseDSNDesc)
+	databaseDSNFlag = pflag.StringP("dsn", "d", "postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable", databaseDSNDesc)
 
 	fileStorageDesc = "Path to the JSON file for storing shorten URLs and its identifiers"
 	fileStorageFlag = pflag.StringP("file-storage", "f", "shorten-urls", fileStorageDesc)
