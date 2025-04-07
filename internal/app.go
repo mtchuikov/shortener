@@ -88,13 +88,6 @@ func (a *app) newHandler(ctx context.Context) http.Handler {
 		err  error
 	)
 
-	postgres := postgres.New(a.pgxConn)
-	err = postgres.CreateTable(ctx)
-	if err != nil {
-		a.log.Fatal().Err(err).
-			Msg("failed to create postgres tables")
-	}
-
 	inmemory, err := inmemory.New(config.FileStorage())
 	if err != nil {
 		a.log.Fatal().Err(err).
@@ -102,7 +95,12 @@ func (a *app) newHandler(ctx context.Context) http.Handler {
 	}
 
 	if config.DatabaseDSN() != "" {
-		repo = postgres
+		postgres := postgres.New(a.pgxConn)
+		err = postgres.CreateTable(ctx)
+		if err != nil {
+			a.log.Fatal().Err(err).
+				Msg("failed to create postgres tables")
+		}
 	} else {
 		repo = inmemory
 	}
