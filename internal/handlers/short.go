@@ -21,7 +21,7 @@ func RegisterShortener(
 	service shortenerService,
 ) {
 	router.Post("/", handleShort(service))
-	router.Post("/api/shorten", nil)
+	router.Post("/api/shorten", handleShort(service))
 }
 
 const maxURLLen = 4096 + 1
