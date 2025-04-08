@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 
 	"github.com/mtchuikov/shortener/internal/models"
@@ -81,6 +82,7 @@ func (s *shortenerService) ServeBatch(
 ) {
 	err := s.repo.BatchCreateShortURLs(ctx, urlsToShort)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 

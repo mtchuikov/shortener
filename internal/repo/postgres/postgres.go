@@ -20,7 +20,7 @@ func New(conn *pgxpool.Conn) *postgres {
 const createTableQuery = `
 	CREATE TABLE IF NOT EXISTS shorten_urls (
 		short_id VARCHAR(255) PRIMARY KEY,
-		original_url TEXT NOT NULL UNIQUE
+		original_url TEXT NOT NULL
 	);
 `
 
