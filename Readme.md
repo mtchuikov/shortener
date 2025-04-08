@@ -5,6 +5,7 @@ TODO:
 
 - [ ] Improve error handling 
 - [ ] Add more tests
+- [ ] Rewrite batch insertion
 
 ## Downloads
 
