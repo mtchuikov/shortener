@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/mtchuikov/shortener/internal/models"
 	"github.com/mtchuikov/shortener/internal/repo"
 )
 
@@ -48,6 +49,23 @@ func (r *inmemory) CreateShortURL(ctx context.Context, originalURL, shortID stri
 	r.shortIDs[originalURL] = shortID
 
 	return r.backup(originalURL, shortID)
+}
+
+func (r *inmemory) BatchCreateShortURLs(ctx context.Context, urlsToShort models.URLsToShort) error {
+	r.rmu.Lock()
+	defer r.rmu.Unlock()
+
+	for _, urlToShot := range urlsToShort {
+		r.originalURLs[urlToShot.CorrelationID] = urlToShot.OriginalURL
+		r.shortIDs[urlToShot.OriginalURL] = urlToShot.CorrelationID
+
+		err := r.backup(urlToShot.OriginalURL, urlToShot.CorrelationID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *inmemory) GetOriginalURL(ctx context.Context, shortID string) (string, error) {

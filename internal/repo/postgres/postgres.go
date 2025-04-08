@@ -5,6 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mtchuikov/shortener/internal/models"
 	"github.com/mtchuikov/shortener/internal/repo"
 )
 
@@ -34,9 +35,26 @@ const insertShortenURLQuery = `
 	ON CONFLICT (short_id) DO NOTHING
 `
 
-func (r *postgres) CreateShortURL(ctx context.Context, url, id string) error {
-	_, err := r.conn.Exec(ctx, insertShortenURLQuery, id, url)
+func (r *postgres) CreateShortURL(ctx context.Context, originalURL, shortID string) error {
+	_, err := r.conn.Exec(ctx, insertShortenURLQuery, shortID, originalURL)
 	return err
+}
+
+func (r *postgres) BatchCreateShortURLs(ctx context.Context, urlsToShort models.URLsToShort) error {
+	tx, err := r.conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	for _, url := range urlsToShort {
+		_, err = tx.Exec(ctx, insertShortenURLQuery, url.ShortID, url.OriginalURL)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
 }
 
 const getOriginalURLQuery = `

@@ -15,6 +15,7 @@ import (
 
 	"github.com/mtchuikov/shortener/internal/config"
 	"github.com/mtchuikov/shortener/internal/handlers"
+	"github.com/mtchuikov/shortener/internal/models"
 	"github.com/mtchuikov/shortener/internal/repo/inmemory"
 	"github.com/mtchuikov/shortener/internal/repo/postgres"
 	"github.com/mtchuikov/shortener/internal/services"
@@ -26,6 +27,7 @@ import (
 
 type repo interface {
 	CreateShortURL(ctx context.Context, originalURL, shortID string) error
+	BatchCreateShortURLs(ctx context.Context, urlsToShort models.URLsToShort) error
 	GetOriginalURL(ctx context.Context, shortID string) (string, error)
 	GetShortID(ctx context.Context, originalURL string) (string, error)
 }

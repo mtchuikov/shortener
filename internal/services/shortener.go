@@ -5,12 +5,14 @@ import (
 	"errors"
 	"regexp"
 
+	"github.com/mtchuikov/shortener/internal/models"
 	"github.com/mtchuikov/shortener/internal/repo"
 	"github.com/mtchuikov/shortener/pkg/strgen"
 )
 
 type shortenerRepo interface {
 	CreateShortURL(ctx context.Context, originalURL, shortID string) error
+	BatchCreateShortURLs(ctx context.Context, urlsToShort models.URLsToShort) error
 	GetShortID(ctx context.Context, originalURL string) (string, error)
 }
 
@@ -65,4 +67,31 @@ func (s *shortenerService) Serve(ctx context.Context, originalURL string) (strin
 
 	shortURL := s.baseURL + shortID
 	return shortURL, nil
+}
+
+// TODO: rewrite this function cause it's implemented bad :(
+func (s *shortenerService) ServeBatch(
+	ctx context.Context,
+	urlsToShort models.URLsToShort,
+	numUrlsToShort int,
+) (
+	models.ShortenURLs,
+	error,
+) {
+	for i := range numUrlsToShort {
+		urlsToShort[i].ShortID = s.shortIDGen.Generate(s.shortIDLen)
+	}
+
+	err := s.repo.BatchCreateShortURLs(ctx, urlsToShort)
+	if err != nil {
+		return nil, err
+	}
+
+	shortenURLs := make(models.ShortenURLs, numUrlsToShort)
+	for i := range numUrlsToShort {
+		shortenURLs[i].CorrelationID = urlsToShort[i].CorrelationID
+		shortenURLs[i].ShortURL = s.baseURL + urlsToShort[i].ShortID
+	}
+
+	return shortenURLs, nil
 }
