@@ -3,8 +3,7 @@ package services
 import "errors"
 
 var (
-	ErrInvalidURL  = errors.New("invalid url")
-	ErrInvalidID   = errors.New("invalid id")
-	ErrIDNotFound  = errors.New("id not found")
-	ErrURLNotFound = errors.New("url not found")
+	ErrInvalidOriginalURL        = errors.New("invalid original url")
+	ErrOriginalURLAlreadyShorten = errors.New("original url already shorten")
+	ErrInvalidShortID            = errors.New("invalid short id")
 )
