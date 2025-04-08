@@ -1,24 +1,29 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type pingerService interface {
-	Error() error
+	Serve(ctx context.Context) error
 }
 
-func RegisterPinger(router chi.Router, pinger pingerService) {
-	router.Get("/ping", handlePing(pinger))
+type pingHandler struct {
+	pinger pingerService
 }
 
-func handlePing(service pingerService) http.HandlerFunc {
-	return func(rw http.ResponseWriter, req *http.Request) {
-		if service.Error() != nil {
-			errMsg := "failed to ping postgres"
-			http.Error(rw, errMsg, http.StatusInternalServerError)
-		}
+func RegisterPing(router chi.Router, service pingerService) {
+	handler := pingHandler{service}
+	router.Get("/ping", handler.Handle)
+}
+
+func (h *pingHandler) Handle(rw http.ResponseWriter, req *http.Request) {
+	err := h.pinger.Serve(req.Context())
+	if err != nil {
+		msg := "failed to ping"
+		http.Error(rw, msg, http.StatusInternalServerError)
 	}
 }

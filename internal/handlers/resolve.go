@@ -11,21 +11,26 @@ type resolverService interface {
 	Serve(ctx context.Context, shortID string) (string, error)
 }
 
-func RegisterResolver(router chi.Router, service resolverService) {
-	router.Get("/{short_id}", handleResolve(service))
+type resolveHandler struct {
+	resolver resolverService
 }
 
-func handleResolve(service resolverService) http.HandlerFunc {
-	return func(rw http.ResponseWriter, req *http.Request) {
-		shortID := chi.URLParam(req, "short_id")
+func RegisterResolve(router chi.Router, service resolverService) {
+	handler := resolveHandler{service}
+	router.Get("/{short_id}", handler.Handle)
+}
 
-		originalURL, err := service.Serve(req.Context(), shortID)
-		if err != nil {
-			http.Error(rw, err.Error(), http.StatusBadRequest)
-			return
-		}
+func (h *resolveHandler) Handle(rw http.ResponseWriter, req *http.Request) {
+	shortID := chi.URLParam(req, "short_id")
+	ctx := req.Context()
 
-		rw.Header().Set("Location", originalURL)
-		rw.WriteHeader(http.StatusTemporaryRedirect)
+	originalURL, err := h.resolver.Serve(ctx, shortID)
+	if err != nil {
+		msg, code := matcErrorToMsgAndCode(err)
+		http.Error(rw, msg, code)
+		return
 	}
+
+	rw.Header().Set("Location", originalURL)
+	rw.WriteHeader(http.StatusTemporaryRedirect)
 }
