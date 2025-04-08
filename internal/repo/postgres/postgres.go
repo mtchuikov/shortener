@@ -31,7 +31,7 @@ func (r *postgres) CreateTable(ctx context.Context) error {
 const insertShortenURLQuery = `
 	INSERT INTO shorten_urls (short_id, original_url)
 	VALUES ($1, $2)
-	ON CONFLICT (id) DO NOTHING
+	ON CONFLICT (short_id) DO NOTHING
 `
 
 func (r *postgres) CreateShortURL(ctx context.Context, url, id string) error {
@@ -62,7 +62,7 @@ func (r *postgres) GetOriginalURL(ctx context.Context, shortID string) (string, 
 
 const getShortIDQuery = `
 	SELECT short_id FROM shorten_urls
-	WHERE original_url = $1;
+	WHERE original_url = $1
 `
 
 func (r *postgres) GetShortID(ctx context.Context, originalURL string) (string, error) {
