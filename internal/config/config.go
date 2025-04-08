@@ -1,30 +1,61 @@
 package config
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/caarlos0/env/v11"
 )
 
-type Config struct {
+var conf config = config{ServiceName: "shortener"}
+
+type config struct {
 	ServiceName string
 	ServerAddr  string `env:"SERVER_ADDRESS"`
 	BaseURL     string `env:"BASE_URL"`
+	DatabaseDSN string `env:"DATABASE_DSN"`
 	FileStorage string `env:"FILE_STORAGE_PATH"`
 	Verbose     bool   `env:"VERBOSE"`
 }
 
-func New() Config {
-	const serviceName = "shortener"
-	config := Config{ServiceName: serviceName}
+const wFailedToLoadConfigFromEnv = "failed to config from env: %w"
 
-	config.loadFromFlags()
-	env.Parse(&config)
+func Init() error {
+	conf.loadFromFlags()
 
-	hasSlash := strings.HasSuffix(config.BaseURL, "/")
-	if !hasSlash {
-		config.BaseURL = config.BaseURL + "/"
+	err := env.Parse(&conf)
+	if err != nil {
+		return fmt.Errorf(wFailedToLoadConfigFromEnv, err)
 	}
 
-	return config
+	hasSlash := strings.HasSuffix(conf.BaseURL, "/")
+	if !hasSlash {
+		conf.BaseURL = conf.BaseURL + "/"
+	}
+
+	return nil
+}
+
+func ServiceName() string {
+	return conf.ServiceName
+}
+
+func ServerAddr() string {
+	return conf.ServerAddr
+}
+
+func BaseURL() string {
+	return conf.BaseURL
+}
+
+func DatabaseDSN() string {
+	return conf.DatabaseDSN
+}
+
+func FileStorage() string {
+	return conf.FileStorage
+}
+
+func Verbose() bool {
+	return conf.Verbose
 }

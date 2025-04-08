@@ -2,45 +2,35 @@ package handlers
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mtchuikov/shortener/pkg/middlewares"
-	"github.com/rs/zerolog"
 )
 
 type resolverService interface {
-	Serve(ctx context.Context, id string) (string, error)
+	Serve(ctx context.Context, shortID string) (string, error)
 }
 
-type resolver struct {
-	logger  zerolog.Logger
-	service resolverService
+type resolveHandler struct {
+	resolver resolverService
 }
 
-func RegisterResolver(lg zerolog.Logger, mux *chi.Mux, srv resolverService) {
-	handler := resolver{
-		logger:  lg,
-		service: srv,
-	}
-
-	mux.Get("/{short_id}", handler.Handle)
+func RegisterResolve(router chi.Router, service resolverService) {
+	handler := resolveHandler{service}
+	router.Get("/{short_id}", handler.Handle)
 }
 
-func (h *resolver) Handle(rw http.ResponseWriter, req *http.Request) {
+func (h *resolveHandler) Handle(rw http.ResponseWriter, req *http.Request) {
+	shortID := chi.URLParam(req, "short_id")
 	ctx := req.Context()
-	id := chi.URLParam(req, "short_id")
 
-	url, err := h.service.Serve(ctx, id)
+	originalURL, err := h.resolver.Serve(ctx, shortID)
 	if err != nil {
-		middlewares.RequestContextWithError(req, err)
-
-		errMsg := errors.Unwrap(err).Error()
-		http.Error(rw, errMsg, http.StatusBadRequest)
+		msg, code := matcErrorToMsgAndCode(err)
+		http.Error(rw, msg, code)
 		return
 	}
 
-	rw.Header().Set("Location", url)
+	rw.Header().Set("Location", originalURL)
 	rw.WriteHeader(http.StatusTemporaryRedirect)
 }
