@@ -70,6 +70,7 @@ func (s *shortenerService) Serve(ctx context.Context, originalURL string) (strin
 }
 
 // TODO: rewrite this function cause it's implemented bad :(
+// i'm so sorry :(
 func (s *shortenerService) ServeBatch(
 	ctx context.Context,
 	urlsToShort models.URLsToShort,
@@ -78,10 +79,6 @@ func (s *shortenerService) ServeBatch(
 	models.ShortenURLs,
 	error,
 ) {
-	for i := range numUrlsToShort {
-		urlsToShort[i].ShortID = s.shortIDGen.Generate(s.shortIDLen)
-	}
-
 	err := s.repo.BatchCreateShortURLs(ctx, urlsToShort)
 	if err != nil {
 		return nil, err
@@ -90,7 +87,7 @@ func (s *shortenerService) ServeBatch(
 	shortenURLs := make(models.ShortenURLs, numUrlsToShort)
 	for i := range numUrlsToShort {
 		shortenURLs[i].CorrelationID = urlsToShort[i].CorrelationID
-		shortenURLs[i].ShortURL = s.baseURL + urlsToShort[i].ShortID
+		shortenURLs[i].ShortURL = s.baseURL + urlsToShort[i].CorrelationID
 	}
 
 	return shortenURLs, nil

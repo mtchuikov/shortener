@@ -48,7 +48,7 @@ func (r *postgres) BatchCreateShortURLs(ctx context.Context, urlsToShort models.
 	defer tx.Rollback(ctx)
 
 	for _, url := range urlsToShort {
-		_, err = tx.Exec(ctx, insertShortenURLQuery, url.ShortID, url.OriginalURL)
+		_, err = tx.Exec(ctx, insertShortenURLQuery, url.CorrelationID, url.OriginalURL)
 		if err != nil {
 			return err
 		}
