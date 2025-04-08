@@ -7,5 +7,5 @@ type URLsToShort []struct {
 
 type ShortenURLs []struct {
 	CorrelationID string `json:"correlation_id"`
-	ShortURL      string `json:"original_url"`
+	ShortURL      string `json:"short_url"`
 }
