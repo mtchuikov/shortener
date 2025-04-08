@@ -7,15 +7,15 @@ import (
 	"github.com/caarlos0/env/v11"
 )
 
-var conf config = config{serviceName: "shortener"}
+var conf config = config{ServiceName: "shortener"}
 
 type config struct {
-	serviceName string
-	serverAddr  string `env:"SERVER_ADDRESS"`
-	baseURL     string `env:"BASE_URL"`
-	databaseDSN string `env:"DATABASE_DSN"`
-	fileStorage string `env:"FILE_STORAGE_PATH"`
-	verbose     bool   `env:"VERBOSE"`
+	ServiceName string
+	ServerAddr  string `env:"SERVER_ADDRESS"`
+	BaseURL     string `env:"BASE_URL"`
+	DatabaseDSN string `env:"DATABASE_DSN"`
+	FileStorage string `env:"FILE_STORAGE_PATH"`
+	Verbose     bool   `env:"VERBOSE"`
 }
 
 const wFailedToLoadConfigFromEnv = "failed to config from env: %w"
@@ -28,34 +28,34 @@ func Init() error {
 		return fmt.Errorf(wFailedToLoadConfigFromEnv, err)
 	}
 
-	hasSlash := strings.HasSuffix(conf.baseURL, "/")
+	hasSlash := strings.HasSuffix(conf.BaseURL, "/")
 	if !hasSlash {
-		conf.baseURL = conf.baseURL + "/"
+		conf.BaseURL = conf.BaseURL + "/"
 	}
 
 	return nil
 }
 
 func ServiceName() string {
-	return conf.serviceName
+	return conf.ServiceName
 }
 
 func ServerAddr() string {
-	return conf.serverAddr
+	return conf.ServerAddr
 }
 
 func BaseURL() string {
-	return conf.baseURL
+	return conf.BaseURL
 }
 
 func DatabaseDSN() string {
-	return conf.databaseDSN
+	return conf.DatabaseDSN
 }
 
 func FileStorage() string {
-	return conf.fileStorage
+	return conf.FileStorage
 }
 
 func Verbose() bool {
-	return conf.verbose
+	return conf.Verbose
 }

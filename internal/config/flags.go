@@ -23,9 +23,9 @@ func (c *config) loadFromFlags() {
 	pflag.CommandLine.SortFlags = false
 	pflag.Parse()
 
-	c.serverAddr = *serverAddrFlag
-	c.baseURL = *baseURLFlag
-	c.databaseDSN = *databaseDSNFlag
-	c.fileStorage = *fileStorageFlag
-	c.verbose = *verboseFlag
+	c.ServerAddr = *serverAddrFlag
+	c.BaseURL = *baseURLFlag
+	c.DatabaseDSN = *databaseDSNFlag
+	c.FileStorage = *fileStorageFlag
+	c.Verbose = *verboseFlag
 }
