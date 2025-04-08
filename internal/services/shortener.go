@@ -2,62 +2,67 @@ package services
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"regexp"
 
-	"github.com/mtchuikov/shortener/pkg/randtools"
+	"github.com/mtchuikov/shortener/internal/repo"
+	"github.com/mtchuikov/shortener/pkg/strgen"
 )
 
-type shortenerCache interface {
-	CreateShortURL(ctx context.Context, url, id string) error
-	GetID(ctx context.Context, url string) (string, error)
+type shortenerRepo interface {
+	CreateShortURL(ctx context.Context, originalURL, shortID string) error
+	GetShortID(ctx context.Context, originalURL string) (string, error)
 }
 
-type shortener struct {
-	baseURL   string
-	urlRegexp *regexp.Regexp
-	idgen     *randtools.StringGenerator
-	cache     shortenerCache
+type shortenerService struct {
+	baseURL    string
+	shortIDLen int
+	shortIDGen *strgen.Generator
+	repo       shortenerRepo
 }
 
-func NewShortener(baseURL string, cache shortenerCache) *shortener {
-	return &shortener{
-		baseURL:   baseURL,
-		urlRegexp: regexp.MustCompile(`^(http://|https://)[a-zA-Z0-9]+([-.][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}(:[0-9]{1,5})?(/.*)?$`),
-		idgen:     randtools.NewStringGenerator(),
-		cache:     cache,
+func NewShortener(baseURL string, repo shortenerRepo) *shortenerService {
+	return &shortenerService{
+		baseURL:    baseURL,
+		shortIDLen: 8,
+		shortIDGen: strgen.New(),
+		repo:       repo,
 	}
 }
 
-func (s *shortener) validateURL(url string) error {
-	const op = "service.shortener.validate_url"
+var originalURLRegexp = regexp.MustCompile(`^(http://|https://)[a-zA-Z0-9]+([-.][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}(:[0-9]{1,5})?(/.*)?$`)
 
-	isValid := s.urlRegexp.MatchString(url)
-	if !isValid {
-		return fmt.Errorf("%s - %w", op, ErrInvalidURL)
+func (s *shortenerService) validateOriginalURL(u string) error {
+	valid := originalURLRegexp.MatchString(u)
+	if !valid {
+		return ErrInvalidOriginalURL
 	}
 
 	return nil
 }
 
-func (s *shortener) Serve(ctx context.Context, url string) (string, error) {
-	err := s.validateURL(url)
+func (s *shortenerService) Serve(ctx context.Context, originalURL string) (string, error) {
+	err := s.validateOriginalURL(originalURL)
 	if err != nil {
 		return "", err
 	}
 
-	id, err := s.cache.GetID(ctx, url)
-	if id == "" && err == nil {
-		const idLen = 8
-		id = s.idgen.Generate(idLen)
-
-		err = s.cache.CreateShortURL(ctx, url, id)
+	shortID, err := s.repo.GetShortID(ctx, originalURL)
+	if err == nil {
+		shortURL := s.baseURL + shortID
+		return shortURL, ErrOriginalURLAlreadyShorten
 	}
 
+	if !errors.Is(err, repo.ErrShortIDNotFound) {
+		return "", err
+	}
+
+	shortID = s.shortIDGen.Generate(s.shortIDLen)
+	err = s.repo.CreateShortURL(ctx, originalURL, shortID)
 	if err != nil {
 		return "", err
 	}
 
-	shortURL := s.baseURL + id
+	shortURL := s.baseURL + shortID
 	return shortURL, nil
 }
