@@ -14,6 +14,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Install tools
+        run: |
+          go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.29.0
+
+      - name: Generate code
+        run: |
+          sqlc generate
+
       - name: Download statictest binary
         uses: robinraju/release-downloader@v1.8
         with:
