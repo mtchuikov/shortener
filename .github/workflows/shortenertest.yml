@@ -58,7 +58,7 @@ jobs:
 
       - name: Install tools
         run: |
-          go install github.com/sqlc-dev/sqlc/cmd/sqlc@1.29.0
+          go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.29.0
           go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.2
 
       - name: Generate code
