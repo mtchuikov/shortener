@@ -21,6 +21,8 @@ type shortenerRepo interface {
 		models.ShortenID,
 		error,
 	)
+
+	BatchInsertShortenURLs(context.Context, models.BatchShortURLs) error
 }
 
 type shortener struct {
@@ -70,4 +72,33 @@ func (s *shortener) Serve(
 	shortenURL, _ := models.NewShortenURL(rawShortenURL)
 
 	return shortenURL, err
+}
+
+func (s *shortener) ServeBatch(
+	ctx context.Context,
+	urlsToShort models.BatchShortURLs,
+	batchSize int,
+) (
+	models.BatchShortenURLs,
+	error,
+) {
+	err := s.repo.BatchInsertShortenURLs(ctx, urlsToShort)
+	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) {
+			s.log.Error().Err(err).Str("op", shortenerServeOp).
+				Msg("failed to insert shorten url")
+
+			return nil, err
+		}
+	}
+
+	shortenURLs := make(models.BatchShortenURLs, batchSize)
+	for i := range batchSize {
+		shortenURLs[i].CorrelationID = urlsToShort[i].CorrelationID
+		shortenURLs[i].ShortenURL = s.baseURL + urlsToShort[i].CorrelationID
+	}
+
+	return shortenURLs, nil
 }

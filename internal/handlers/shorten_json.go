@@ -62,3 +62,46 @@ func (h *shorten) HandleJSON(rw http.ResponseWriter, req *http.Request) {
 	rw.WriteHeader(statusCode)
 	rw.Write(payload)
 }
+
+func (h *shorten) HandleJSONBatch(rw http.ResponseWriter, req *http.Request) {
+	payload, err := io.ReadAll(req.Body)
+	if err != nil {
+		http.Error(rw, "failed to read body", http.StatusBadRequest)
+		return
+	}
+
+	var reqData models.BatchShortURLs
+	err = json.Unmarshal(payload, &reqData)
+	if err != nil {
+		http.Error(rw, "invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	batchSize := len(reqData)
+	if batchSize == 0 {
+		http.Error(rw, "no items in batch", http.StatusBadRequest)
+		return
+	}
+
+	ctx := req.Context()
+	shortenURLs, err := h.shortener.ServeBatch(ctx, reqData, batchSize)
+	if err != nil {
+		code, msg, err := serviceErrorToCodeAndMsg(err)
+		if err != nil {
+			logUnexpectedError(h.log, err, resolveOp)
+		}
+
+		http.Error(rw, msg, code)
+		return
+	}
+
+	payload, err = json.Marshal(shortenURLs)
+	if err != nil {
+		http.Error(rw, "failed to marshal", http.StatusInternalServerError)
+		return
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	rw.WriteHeader(http.StatusCreated)
+	rw.Write(payload)
+}

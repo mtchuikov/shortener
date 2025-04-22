@@ -13,6 +13,13 @@ import (
 
 type shortener interface {
 	Serve(context.Context, models.OriginalURL) (models.ShortenURL, error)
+	ServeBatch(
+		ctx context.Context, urlsToShort models.BatchShortURLs,
+		batchSize int,
+	) (
+		models.BatchShortenURLs,
+		error,
+	)
 }
 
 type shorten struct {
@@ -32,6 +39,7 @@ func RegisterShorten(log *zerolog.Logger, router chi.Router, shortener shortener
 
 	router.Post("/", handler.Handle)
 	router.Post("/api/shorten", handler.HandleJSON)
+	router.Post("/api/shorten/batch", handler.HandleJSONBatch)
 }
 
 func (h *shorten) Handle(rw http.ResponseWriter, req *http.Request) {

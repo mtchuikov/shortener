@@ -46,3 +46,33 @@ func (r *shortenURLs) InsertShortenURL(
 
 	return newShortenID, nil
 }
+
+func (r *shortenURLs) BatchInsertShortenURLs(
+	ctx context.Context, shortURLs models.BatchShortURLs,
+) error {
+	tx, err := r.conn.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("%w: %w", repo.ErrUnexpectedError, err)
+	}
+	defer tx.Rollback(ctx)
+
+	querier := r.querier.WithTx(tx)
+	for _, shortURL := range shortURLs {
+		params := v1shortenurls.InsertShortenURLParams{
+			ShortenID:   shortURL.CorrelationID,
+			OriginalUrl: shortURL.OriginalURL,
+		}
+
+		_, err = querier.InsertShortenURL(ctx, params)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("%w: %w", repo.ErrUnexpectedError, err)
+	}
+
+	return nil
+}

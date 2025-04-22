@@ -38,3 +38,22 @@ func (r *shortenURLs) InsertShortenURL(
 
 	return shortenID, nil
 }
+
+func (r *shortenURLs) BatchInsertShortenURLs(
+	ctx context.Context, shortURLs models.BatchShortURLs,
+) error {
+	r.rmu.Lock()
+	defer r.rmu.Unlock()
+
+	for _, urlToShot := range shortURLs {
+		r.originalURLs[urlToShot.CorrelationID] = urlToShot.OriginalURL
+		r.shortenIDs[urlToShot.OriginalURL] = urlToShot.CorrelationID
+
+		err := r.backup(urlToShot.OriginalURL, urlToShot.CorrelationID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
