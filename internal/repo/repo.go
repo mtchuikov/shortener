@@ -11,4 +11,5 @@ type IShortenURLs interface {
 		models.ShortenID, error,
 	)
 	GetOriginalURL(context.Context, models.ShortenID) (models.OriginalURL, error)
+	BatchInsertShortenURLs(context.Context, models.BatchShortURLs) error
 }
