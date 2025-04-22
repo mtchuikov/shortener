@@ -32,8 +32,7 @@ func Init() error {
 		return fmt.Errorf("%w: %s", ErrUnableToParseEnv, err)
 	}
 
-	hasSlash := strings.HasSuffix(conf.BaseURL, "/")
-	if !hasSlash {
+	if !strings.HasSuffix(conf.BaseURL, "/") {
 		conf.BaseURL = conf.BaseURL + "/"
 	}
 
