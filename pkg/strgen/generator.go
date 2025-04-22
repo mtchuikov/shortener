@@ -25,16 +25,7 @@ type Generator struct {
 	letterIdxMax  int
 }
 
-// NewStringGenerator creates and returns a *StringGenerator
-// object designed for generating random strings.
-// The generator's configuration can be customized using
-// optional parameters. If no alphabet is specified, a
-// default alphabet with 62 characters (uppercase and lowercase
-// Latin letters, and digits) is used.
-//
-// Note: if you want to use a custom alphabet, ensure it has
-// sufficient length to provide variety in generated strings.
-func New(opts ...Option) *Generator {
+func newGenerator(opts ...Option) *Generator {
 	var seed [32]byte
 	cryptorand.Read(seed[:])
 
@@ -67,6 +58,19 @@ func New(opts ...Option) *Generator {
 	g.letterIdxMax = letterIndexMax
 
 	return g
+}
+
+// NewStringGenerator creates and returns a *StringGenerator
+// object designed for generating random strings.
+// The generator's configuration can be customized using
+// optional parameters. If no alphabet is specified, a
+// default alphabet with 62 characters (uppercase and lowercase
+// Latin letters, and digits) is used.
+//
+// Note: if you want to use a custom alphabet, ensure it has
+// sufficient length to provide variety in generated strings.
+func New(opts ...Option) *Generator {
+	return newGenerator(opts...)
 }
 
 // GenerateString produces a random string of a specified length

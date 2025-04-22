@@ -3,7 +3,8 @@ package repo
 import "errors"
 
 var (
-	ErrFailedToGetOriginalURL = errors.New("failed to get original url")
-	ErrOriginalURLNotFound    = errors.New("original url not found")
-	ErrShortIDNotFound        = errors.New("short id not found")
+	ErrShortenIDAlreadyExists      = errors.New("shorten id already exists")
+	ErrOirignalURLAlreadyShortened = errors.New("original url already shorten")
+	ErrOriginalURLNotFound         = errors.New("original url not found")
+	ErrUnexpectedError             = errors.New("unexpected error")
 )

@@ -1,43 +1,49 @@
 package config
 
 import (
+	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/caarlos0/env/v11"
 )
 
-var conf config = config{ServiceName: "shortener"}
+var conf config
 
 type config struct {
-	ServiceName string
-	ServerAddr  string `env:"SERVER_ADDRESS"`
-	BaseURL     string `env:"BASE_URL"`
-	DatabaseDSN string `env:"DATABASE_DSN"`
-	FileStorage string `env:"FILE_STORAGE_PATH"`
-	Verbose     bool   `env:"VERBOSE"`
+	LogToFile    bool   `ENV:"LOG_TO_FILE"`
+	LogFile      string `ENV:"LOG_FILE"`
+	LogFileLevel string `ENV:"LOG_FILE_LEVEL"`
+	ServerAddr   string `env:"SERVER_ADDRESS"`
+	BaseURL      string `env:"BASE_URL"`
+	JWTSecret    string `env:"JWT_SECRET"`
+	DatabaseDSN  string `ENV:"DATABASE_DSN"`
+	FileStorage  string `env:"FILE_STORAGE_PATH"`
+	Verbose      bool   `env:"VERBOSE"`
 }
 
-const wFailedToLoadConfigFromEnv = "failed to config from env: %w"
+var ErrUnableToParseEnv = errors.New("unable to parse env")
 
 func Init() error {
-	conf.loadFromFlags()
+	initFromFlags()
 
 	err := env.Parse(&conf)
 	if err != nil {
-		return fmt.Errorf(wFailedToLoadConfigFromEnv, err)
-	}
-
-	hasSlash := strings.HasSuffix(conf.BaseURL, "/")
-	if !hasSlash {
-		conf.BaseURL = conf.BaseURL + "/"
+		return fmt.Errorf("%w: %s", ErrUnableToParseEnv, err)
 	}
 
 	return nil
 }
 
-func ServiceName() string {
-	return conf.ServiceName
+func LogToFile() bool {
+	return conf.LogToFile
+}
+
+func LogFile() string {
+	return conf.LogFile
+}
+
+func LogFileLevel() string {
+	return conf.LogFileLevel
 }
 
 func ServerAddr() string {
@@ -46,6 +52,10 @@ func ServerAddr() string {
 
 func BaseURL() string {
 	return conf.BaseURL
+}
+
+func JWTSecret() string {
+	return conf.JWTSecret
 }
 
 func DatabaseDSN() string {

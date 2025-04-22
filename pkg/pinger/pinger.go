@@ -2,18 +2,21 @@ package pinger
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/mtchuikov/shortener/pkg/backoff"
 	"github.com/mtchuikov/shortener/pkg/chsubscription"
-	"github.com/rs/zerolog"
+
+	zlog "github.com/rs/zerolog"
 )
 
 const (
 	DefaultPingInterval    = 3 * time.Second
 	DefaultBackoffInterval = 2 * time.Second
 	DefaultBackoffMax      = 6 * time.Second
+	DefaultFailedThreshold = 0
 )
 
 type pinger interface {
@@ -21,25 +24,28 @@ type pinger interface {
 }
 
 type Pinger struct {
-	log       zerolog.Logger
-	mu        sync.Mutex
-	pinger    pinger
-	ticker    *time.Ticker
-	backoff   *backoff.Backoff
-	err       error
-	chsub     *chsubscription.ChSubscription[error]
-	closeOnce sync.Once
+	log             *zlog.Logger
+	mu              sync.Mutex
+	pinger          pinger
+	ticker          *time.Ticker
+	backoff         *backoff.Backoff
+	err             error
+	failedThreshold uint8
+	failedCount     uint8
+	chsub           *chsubscription.ChSubscription[error]
+	closeOnce       sync.Once
 }
 
-func New(log zerolog.Logger, pinger pinger, opts ...Option) *Pinger {
+func New(log *zlog.Logger, pinger pinger, opts ...Option) *Pinger {
 	p := &Pinger{
-		log:       log,
-		mu:        sync.Mutex{},
-		pinger:    pinger,
-		ticker:    time.NewTicker(DefaultPingInterval),
-		err:       nil,
-		chsub:     chsubscription.New[error](),
-		closeOnce: sync.Once{},
+		log:             log,
+		mu:              sync.Mutex{},
+		pinger:          pinger,
+		ticker:          time.NewTicker(DefaultPingInterval),
+		err:             nil,
+		chsub:           chsubscription.New[error](),
+		closeOnce:       sync.Once{},
+		failedThreshold: DefaultFailedThreshold,
 	}
 
 	backoff := backoff.New()
@@ -47,6 +53,7 @@ func New(log zerolog.Logger, pinger pinger, opts ...Option) *Pinger {
 	backoff.Max = DefaultBackoffMax
 
 	p.backoff = backoff
+	p.failedCount = 0
 
 	for _, opt := range opts {
 		opt(p)
@@ -73,10 +80,16 @@ func (p *Pinger) Ping(ctx context.Context, timeout time.Duration) {
 			p.mu.Unlock()
 
 			cancel()
+
 			if err != nil {
 				p.log.Debug().
 					Err(err).
-					Msg("ping error occurred")
+					Msg("failed to ping")
+
+				if p.failedThreshold > 0 &&
+					p.failedCount >= p.failedThreshold {
+					err = fmt.Errorf("%w: %w", ErrFailedThresholdExceeded, err)
+				}
 
 				p.err = err
 				p.chsub.Notify(ctx, err)
@@ -93,11 +106,12 @@ func (p *Pinger) Ping(ctx context.Context, timeout time.Duration) {
 			p.log.Debug().
 				Msg("ping successful")
 			p.backoff.Reset()
+			p.failedCount = 0
 		}
 	}
 }
 
-func (p *Pinger) ReplacePinger(pinger pinger) {
+func (p *Pinger) ChangePinger(pinger pinger) {
 	p.mu.Lock()
 	p.pinger = pinger
 	p.mu.Unlock()

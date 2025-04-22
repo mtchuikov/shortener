@@ -1,9 +1,9 @@
 package models
 
-type URLToShort struct {
+type ShortURLRequest struct {
 	URL string `json:"url"`
 }
 
-type ShortenURL struct {
+type ShortURLResponse struct {
 	Result string `json:"result"`
 }

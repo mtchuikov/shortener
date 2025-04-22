@@ -2,30 +2,68 @@ package config
 
 import "github.com/spf13/pflag"
 
-var (
-	serverAddrFlagDesc = "Specify the IP address and port for the server to listen on"
-	serverAddrFlag     = pflag.StringP("server-addr", "a", "127.0.0.1:8080", serverAddrFlagDesc)
+func initFromFlags() {
+	pflag.BoolVarP(
+		&conf.LogToFile,
+		"log.file.enable", "",
+		false,
+		"Flag to switch logging to file",
+	)
 
-	baseURLFlagDesc = "Define the base URL used to generate shortened links"
-	baseURLFlag     = pflag.StringP("base-url", "b", "http://127.0.0.1:8080/", baseURLFlagDesc)
+	pflag.StringVarP(
+		&conf.LogFile,
+		"log.file", "",
+		"shortener.log",
+		"File to write logs",
+	)
 
-	databaseDSNDesc = "Define the database DSN (Data Source Name) used to connect to the database"
-	databaseDSNFlag = pflag.StringP("dsn", "d", "", databaseDSNDesc)
+	pflag.StringVarP(
+		&conf.LogFileLevel,
+		"log.file.level", "",
+		"error",
+		"Min log level to write to file",
+	)
 
-	fileStorageDesc = "Path to the JSON file for storing shorten URLs and its identifiers"
-	fileStorageFlag = pflag.StringP("file-storage", "f", "shorten-urls", fileStorageDesc)
+	pflag.StringVarP(
+		&conf.ServerAddr,
+		"addr", "a",
+		"127.0.0.1:8080",
+		"Address to listen http server",
+	)
 
-	verboseFlagDesc = "Enable verbose logging at the debug level. Overrides the log-level flag to 'debug'"
-	verboseFlag     = pflag.BoolP("verbose", "v", false, verboseFlagDesc)
-)
+	pflag.StringVarP(
+		&conf.BaseURL,
+		"base", "b",
+		"http://127.0.0.1:8080/",
+		"Base for shorten URLs. Shortened URL = base + random id",
+	)
 
-func (c *config) loadFromFlags() {
+	pflag.StringVarP(
+		&conf.JWTSecret,
+		"secret", "s",
+		"", "Secret to sign and verify JWTs",
+	)
+
+	pflag.StringVarP(
+		&conf.DatabaseDSN,
+		"dsn", "d",
+		"", "URL to connect Postgres database",
+	)
+
+	pflag.StringVarP(
+		&conf.FileStorage,
+		"file", "f",
+		"shortener.backup",
+		"File to backup shorten URLs from cache",
+	)
+
+	pflag.BoolVarP(
+		&conf.Verbose,
+		"verbose", "v",
+		false,
+		"Flag to switch verbose mode of logging",
+	)
+
 	pflag.CommandLine.SortFlags = false
 	pflag.Parse()
-
-	c.ServerAddr = *serverAddrFlag
-	c.BaseURL = *baseURLFlag
-	c.DatabaseDSN = *databaseDSNFlag
-	c.FileStorage = *fileStorageFlag
-	c.Verbose = *verboseFlag
 }

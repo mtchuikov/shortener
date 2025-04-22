@@ -52,7 +52,7 @@ func (s *testChSubscription) TestNotify() {
 			errMsg = "must receive %s through channel, got %d"
 			s.Require().Equalf(s.val, val, errMsg, s.val, val)
 		default:
-			errMsg := "expected to receive value via channel, got nothing"
+			errMsg := "channel must contain value"
 			s.Require().FailNow(errMsg)
 		}
 	}

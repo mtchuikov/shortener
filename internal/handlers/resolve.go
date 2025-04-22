@@ -4,33 +4,57 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/mtchuikov/shortener/internal/models"
+
 	"github.com/go-chi/chi/v5"
+	"github.com/rs/zerolog"
 )
 
-type resolverService interface {
-	Serve(ctx context.Context, shortID string) (string, error)
+type resolver interface {
+	Serve(context.Context, models.ShortenID) (models.OriginalURL, error)
 }
 
-type resolveHandler struct {
-	resolver resolverService
+type resolve struct {
+	log      *zerolog.Logger
+	resolver resolver
 }
 
-func RegisterResolve(router chi.Router, service resolverService) {
-	handler := resolveHandler{service}
-	router.Get("/{short_id}", handler.Handle)
+func RegisterResolver(log *zerolog.Logger, router chi.Router, resolver resolver) {
+	handler := resolve{
+		log:      log,
+		resolver: resolver,
+	}
+
+	router.Get("/{shorten_id}", handler.Handle)
 }
 
-func (h *resolveHandler) Handle(rw http.ResponseWriter, req *http.Request) {
-	shortID := chi.URLParam(req, "short_id")
-	ctx := req.Context()
+const resolveOp = "handlers.resolve.handle"
 
-	originalURL, err := h.resolver.Serve(ctx, shortID)
+func (h *resolve) Handle(rw http.ResponseWriter, req *http.Request) {
+	rawShortenID := chi.URLParam(req, "shorten_id")
+
+	shortenID, err := models.NewShortenID(rawShortenID)
 	if err != nil {
-		msg, code := matcErrorToMsgAndCode(err)
+		code, msg, err := modelErrorToCodeAndMsg(err)
+		if err != nil {
+			logUnexpectedError(h.log, err, resolveOp)
+		}
+
 		http.Error(rw, msg, code)
 		return
 	}
 
-	rw.Header().Set("Location", originalURL)
+	originalURL, err := h.resolver.Serve(req.Context(), shortenID)
+	if err != nil {
+		code, msg, err := serviceErrorToCodeAndMsg(err)
+		if err != nil {
+			logUnexpectedError(h.log, err, resolveOp)
+		}
+
+		http.Error(rw, msg, code)
+		return
+	}
+
+	rw.Header().Set("Location", originalURL.String())
 	rw.WriteHeader(http.StatusTemporaryRedirect)
 }

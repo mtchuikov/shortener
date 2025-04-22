@@ -3,38 +3,44 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/mtchuikov/shortener/internal/models"
 	"github.com/mtchuikov/shortener/internal/repo"
-	"github.com/mtchuikov/shortener/internal/services"
+
+	"github.com/rs/zerolog"
 )
 
-func matcErrorToMsgAndCode(err error) (string, int) {
-	var msg string
+func logUnexpectedError(log *zerolog.Logger, err error, op string) {
+	log.Error().Err(err).Str("op", op).
+		Msg("unexpected error")
+}
+
+func modelErrorToCodeAndMsg(err error) (int, string, error) {
 	switch err {
-	case services.ErrInvalidOriginalURL:
-		msg = "invalid original url"
-		return msg, http.StatusBadRequest
+	case models.ErrInvalidOriginalURL:
+		return http.StatusBadRequest, err.Error(), nil
 
-	case services.ErrOriginalURLAlreadyShorten:
-		return "", http.StatusConflict
-
-	case services.ErrInvalidShortID:
-		msg = "invalid short id"
-		return msg, http.StatusBadRequest
-
-	case repo.ErrFailedToGetOriginalURL:
-		msg = "failed to get original url"
-		return msg, http.StatusInternalServerError
-
-	case repo.ErrOriginalURLNotFound:
-		msg = "original url not found"
-		return msg, http.StatusBadRequest
-
-	case repo.ErrShortIDNotFound:
-		msg = "short id not found"
-		return msg, http.StatusBadRequest
+	case models.ErrInvalidShortenID:
+		return http.StatusBadRequest, err.Error(), nil
 
 	default:
-		msg = "something went wrong"
-		return msg, http.StatusInternalServerError
+		msg := "something went wrong"
+		return http.StatusInternalServerError, msg, err
+	}
+}
+
+func serviceErrorToCodeAndMsg(err error) (int, string, error) {
+	switch err {
+	case repo.ErrShortenIDAlreadyExists:
+		return http.StatusInternalServerError, err.Error(), nil
+
+	case repo.ErrOirignalURLAlreadyShortened:
+		return http.StatusConflict, "", nil
+
+	case repo.ErrUnexpectedError:
+		return http.StatusInternalServerError, err.Error(), nil
+
+	default:
+		msg := "something went wrong"
+		return http.StatusInternalServerError, msg, err
 	}
 }

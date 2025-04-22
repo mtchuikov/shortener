@@ -8,8 +8,9 @@
 
 *.out
 
-build/
-vendor/
-
 .idea
 .vscode
+
+build/
+vendor/
+internal/gen

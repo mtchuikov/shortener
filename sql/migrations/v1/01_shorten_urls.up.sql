@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS shorten_urls (
+    shorten_id VARCHAR(12) PRIMARY KEY,
+    original_url VARCHAR(4096) UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

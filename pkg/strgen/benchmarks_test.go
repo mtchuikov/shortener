@@ -11,8 +11,7 @@ func BenchmarkSimpleRand(b *testing.B) {
 	for range 10000 {
 		b := make([]rune, 32)
 		for i := range b {
-			idx := rand.IntN(DefaultAlphabetLen)
-			b[i] = runeAlphabet[idx]
+			b[i] = runeAlphabet[rand.IntN(DefaultAlphabetLen)]
 		}
 
 		_ = string(b)

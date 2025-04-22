@@ -21,3 +21,9 @@ func WithBackoffMax(interval time.Duration) Option {
 		p.backoff.Max = interval
 	}
 }
+
+func WithFailedThreshold(n uint8) Option {
+	return func(p *Pinger) {
+		p.failedThreshold = n
+	}
+}

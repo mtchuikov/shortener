@@ -2,48 +2,39 @@ package closer
 
 import (
 	"context"
-	"slices"
 	"sync"
 )
 
-const DefaultMaxConcurrent = 5
+const DefaultMaxConcurrentTasks = 5
 
-var Global *Closer = nil
+type TaskFn func(context.Context)
 
 type Task struct {
 	Sync bool
-	Fn   func(context.Context)
+	Fn   TaskFn
 }
 
 type Closer struct {
 	mu            sync.Mutex
+	VeryFirst     TaskFn
 	tasks         []Task
+	VeryLast      TaskFn
 	numTasks      int
-	closeOnce     sync.Once
 	maxConcurrent int
 }
 
-func new(opts ...Option) *Closer {
+func New(opts ...Option) *Closer {
 	c := &Closer{
 		mu:            sync.Mutex{},
 		tasks:         make([]Task, 0, 3),
-		closeOnce:     sync.Once{},
-		maxConcurrent: DefaultMaxConcurrent,
+		maxConcurrent: DefaultMaxConcurrentTasks,
 	}
 
 	for _, opt := range opts {
-		opt(Global)
+		opt(c)
 	}
 
 	return c
-}
-
-func New(opts ...Option) *Closer {
-	return new(opts...)
-}
-
-func InitGlobal(opts ...Option) {
-	Global = new(opts...)
 }
 
 func (c *Closer) NumTasks() int {
@@ -57,35 +48,24 @@ func (c *Closer) Add(task Task) {
 	c.mu.Unlock()
 }
 
-func (c *Closer) AddWithPriority(priority int, task Task) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.numTasks++
-
-	if priority <= 0 {
-		priority = 0
-	}
-
-	if priority >= c.numTasks {
-		c.tasks = append(c.tasks, task)
-		return
-	}
-
-	c.tasks = slices.Insert(c.tasks, priority, task)
-}
-
 func (c *Closer) Reset() {
 	c.mu.Lock()
 	c.tasks = make([]Task, 0, 3)
 	c.numTasks = 0
-	c.closeOnce = sync.Once{}
 	c.mu.Unlock()
 }
 
 func (c *Closer) Close(ctx context.Context) error {
 	var err error
 	closeFn := func() {
+		if c.VeryFirst != nil {
+			c.VeryFirst(ctx)
+		}
+
+		if c.VeryLast != nil {
+			defer c.VeryLast(ctx)
+		}
+
 		sem := make(chan struct{}, c.maxConcurrent)
 		var wg sync.WaitGroup
 
@@ -94,19 +74,28 @@ func (c *Closer) Close(ctx context.Context) error {
 			case <-ctx.Done():
 				err = ctx.Err()
 				return
-			case sem <- struct{}{}:
-			}
-
-			wg.Add(1)
-			doneFn := func() {
-				wg.Done()
-				<-sem
+			default:
 			}
 
 			if task.Sync {
+				// Wait until all async tasks will be done before starting the sync
+				// ones. It helps to avoid unexpected errors that would be possible
+				// whitout this check. For instance, we planned to close the
+				// database asynchronously and close the logger synchronously, the
+				// logger might be closed before the database finishes its closure,
+				// resulting in the loss of log messages generated during the
+				// database shutdown.
+				wg.Wait()
 				task.Fn(ctx)
-				doneFn()
 				continue
+			}
+
+			sem <- struct{}{}
+			wg.Add(1)
+
+			doneFn := func() {
+				wg.Done()
+				<-sem
 			}
 
 			go func() {
@@ -131,7 +120,8 @@ func (c *Closer) Close(ctx context.Context) error {
 		}
 	}
 
-	c.closeOnce.Do(closeFn)
+	once := sync.Once{}
+	once.Do(closeFn)
 
 	return err
 }

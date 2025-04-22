@@ -34,7 +34,7 @@ func (r *verboseResponseWriter) WriteHeader(statusCode int) {
 // processing, and response size. This middleware is useful for
 // detailed monitoring and debugging of HTTP requests and their
 // handling behavior within the service.
-func Verbose(logger zerolog.Logger) func(http.Handler) http.Handler {
+func Verbose(logger *zerolog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(rw http.ResponseWriter, req *http.Request) {
 			start := time.Now()

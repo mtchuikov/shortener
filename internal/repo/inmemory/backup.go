@@ -10,7 +10,7 @@ type backupRecord struct {
 	ShortID     string `json:"short_id"`
 }
 
-func (r *inmemory) restoreBackup() error {
+func (r *shortenURLs) restoreBackup() error {
 	scanner := bufio.NewScanner(r.file)
 	var record backupRecord
 
@@ -27,13 +27,13 @@ func (r *inmemory) restoreBackup() error {
 		}
 
 		r.originalURLs[record.ShortID] = record.OriginalURL
-		r.shortIDs[record.OriginalURL] = record.ShortID
+		r.shortenIDs[record.OriginalURL] = record.ShortID
 	}
 
 	return nil
 }
 
-func (r *inmemory) backup(originalURL, shortID string) error {
+func (r *shortenURLs) backup(originalURL, shortID string) error {
 	record := backupRecord{
 		OriginalURL: originalURL,
 		ShortID:     shortID,
