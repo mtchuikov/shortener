@@ -8,7 +8,7 @@ import (
 type ShortenID string
 
 var (
-	validShortenID      = regexp.MustCompile(`^[A-Za-z0-9]{8,12}$`)
+	validShortenID      = regexp.MustCompile(`^([A-Za-z0-9]{8,12}|[0-9A-Fa-f]{8}(-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12})$`)
 	ErrInvalidShortenID = errors.New("invalid shorten id")
 )
 
