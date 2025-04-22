@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/caarlos0/env/v11"
 )
@@ -29,6 +30,11 @@ func Init() error {
 	err := env.Parse(&conf)
 	if err != nil {
 		return fmt.Errorf("%w: %s", ErrUnableToParseEnv, err)
+	}
+
+	hasSlash := strings.HasSuffix(conf.BaseURL, "/")
+	if !hasSlash {
+		conf.BaseURL = conf.BaseURL + "/"
 	}
 
 	return nil
