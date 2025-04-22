@@ -72,7 +72,7 @@ jobs:
 
       - name: Migrate database
         run: |
-          migrate -path ./sql/migrations/* -database up postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable
+          migrate -path ./sql/migrations/* -database postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable up
 
       - name: "Code increment #1"
         if: |
