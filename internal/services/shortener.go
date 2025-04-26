@@ -4,101 +4,138 @@ import (
 	"context"
 	"errors"
 
-	"github.com/mtchuikov/shortener/internal/models"
-	"github.com/mtchuikov/shortener/internal/repo"
-	"github.com/mtchuikov/shortener/pkg/strgen"
-
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/rs/zerolog"
+
+	"github.com/mtchuikov/shortener/internal/models"
+	"github.com/mtchuikov/shortener/internal/storage"
+	"github.com/mtchuikov/shortener/pkg/strgen"
 )
 
-type shortenerRepo interface {
-	InsertShortenURL(
-		context.Context,
-		models.ShortenID,
-		models.OriginalURL,
-	) (
-		models.ShortenID,
-		error,
-	)
-
-	BatchInsertShortenURLs(context.Context, models.BatchShortURLs) error
-}
+var _ Shortener = (*shortener)(nil)
 
 type shortener struct {
 	log     *zerolog.Logger
-	baseURL string
-	repo    shortenerRepo
+	storage storage.ShortURLsStorage
+	slugGen *strgen.Generator
 }
 
-func NewShortener(log *zerolog.Logger, baseURL string, repo shortenerRepo) *shortener {
+func NewShortener(log *zerolog.Logger, storage storage.ShortURLsStorage) *shortener {
 	return &shortener{
 		log:     log,
-		baseURL: baseURL,
-		repo:    repo,
+		storage: storage,
+		slugGen: strgen.Global,
 	}
 }
 
-const shortenerServeOp = "services.shortener.serve"
+const createShortURLOp = "services.shortener.create_short_url"
 
-func (s *shortener) Serve(
+func (s *shortener) CreateShortURL(
 	ctx context.Context,
-	originalURL models.OriginalURL,
-) (
-	models.ShortenURL,
-	error,
-) {
-	rawShortenID := strgen.Global.Generate(8)
-	shortenID, _ := models.NewShortenID(rawShortenID)
-
-	var err error
-	shortenID, err = s.repo.InsertShortenURL(ctx, shortenID, originalURL)
+	userID,
+	originalURL string,
+) (string, error) {
+	slug := s.slugGen.Generate(8)
+	shortURL, err := s.storage.CreateShortURL(ctx, userID, slug, originalURL)
 	if err != nil {
-		var pgErr *pgconn.PgError
+		if !errors.Is(err, storage.ErrOriginalURLAlreadyExists) {
+			s.log.Error().Err(err).
+				Str("op", createShortURLOp).
+				Msg("failed to create short url")
 
-		if errors.As(err, &pgErr) {
-			s.log.Error().Err(err).Str("op", shortenerServeOp).
-				Msg("failed to insert shorten url")
-
-			return "", err
-		}
-
-		if err == repo.ErrShortenIDAlreadyExists {
 			return "", err
 		}
 	}
 
-	rawShortenURL := s.baseURL + shortenID.String()
-	shortenURL, _ := models.NewShortenURL(rawShortenURL)
-
-	return shortenURL, err
+	return shortURL, err
 }
 
-func (s *shortener) ServeBatch(
+const batchCreateShortURLsOp = "services.shortener.batch_create_short_urls"
+
+func (s *shortener) BatchCreateShortURLs(
 	ctx context.Context,
-	urlsToShort models.BatchShortURLs,
-	batchSize int,
-) (
-	models.BatchShortenURLs,
-	error,
-) {
-	err := s.repo.BatchInsertShortenURLs(ctx, urlsToShort)
+	userID string,
+	items []models.BatchCreateShortURLs,
+) ([]models.BatchCreateShortURLsResult, error) {
+	result, err := s.storage.BatchCreateShortURLs(ctx, userID, items)
 	if err != nil {
-		var pgErr *pgconn.PgError
-
-		if errors.As(err, &pgErr) {
-			s.log.Error().Err(err).Str("op", shortenerServeOp).
-				Msg("failed to insert shorten url")
-
-			return nil, err
+		if !errors.Is(err, storage.ErrNoItemsInBatch) {
+			s.log.Error().Err(err).
+				Str("op", batchCreateShortURLsOp).
+				Msg("failed to batch create short urls")
 		}
+
+		return nil, err
 	}
 
-	shortenURLs := make(models.BatchShortenURLs, batchSize)
-	for i := range batchSize {
-		shortenURLs[i].CorrelationID = urlsToShort[i].CorrelationID
-		shortenURLs[i].ShortenURL = s.baseURL + urlsToShort[i].CorrelationID
+	return result, nil
+}
+
+const getOriginalURLBySlugOp = "services.shortener.get_original_url_by_slug"
+
+func (s *shortener) GetOriginalURLBySlug(
+	ctx context.Context,
+	slug string,
+) (string, bool, error) {
+	originalURL, deleted, err := s.storage.GetOriginalURLBySlug(ctx, slug)
+	if err != nil {
+		if !errors.Is(err, storage.ErrOriginalURLNotFound) {
+			s.log.Error().Err(err).
+				Str("op", getOriginalURLBySlugOp).
+				Msg("failed to get original url")
+		}
+
+		return "", deleted, err
 	}
 
-	return shortenURLs, nil
+	return originalURL, deleted, nil
+}
+
+const listShortURLsByUserOp = "services.shortener.list_short_urls_by_user"
+
+func (s *shortener) ListShortURLsByUser(
+	ctx context.Context,
+	userID string,
+) ([]models.ListShortURLsByUserResult, error) {
+	result, err := s.storage.ListShortURLsByUser(ctx, userID)
+	if err != nil {
+		if !errors.Is(err, storage.ErrUserHasNoShortURLs) {
+			s.log.Error().Err(err).
+				Str("op", listShortURLsByUserOp).
+				Msg("failed to list short urls")
+		}
+
+		return nil, err
+	}
+
+	return result, nil
+}
+
+const markShortURLAsActiveOp = "services.shortener.mark_short_url_as_active"
+
+func (s *shortener) MarkShortURLsAsActive(ctx context.Context, userID string, slugs []string) error {
+	err := s.storage.MarkShortURLsAsActive(ctx, userID, slugs)
+	if err != nil {
+		s.log.Error().Err(err).
+			Str("op", markShortURLAsActiveOp).
+			Msg("failed to set short url status")
+
+		return err
+	}
+
+	return nil
+}
+
+const markShortURLAsDeletedOp = "services.shortener.mark_short_url_as_deleted"
+
+func (s *shortener) MarkShortURLsAsDeleted(ctx context.Context, userID string, slugs []string) error {
+	err := s.storage.MarkShortURLsAsDeleted(ctx, userID, slugs)
+	if err != nil {
+		s.log.Error().Err(err).
+			Str("op", markShortURLAsDeletedOp).
+			Msg("failed to set short url status")
+
+		return err
+	}
+
+	return nil
 }

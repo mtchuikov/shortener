@@ -7,50 +7,49 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func matchParseError(err error) error {
+func parseErrorToMsg(err error) string {
 	if errors.Is(err, jwt.ErrTokenExpired) {
-		return ErrExpired
+		return ErrMsgExpired
 	}
 
 	if errors.Is(err, jwt.ErrTokenNotValidYet) {
-		return ErrNBFInvalid
+		return ErrMsgNBFInvalid
 	}
 
-	return ErrUnauthorized
+	return ErrMsgUnauthorized
 }
 
-func Authenticate(ja *JWTAuth, extractor TokenExtractor) func(http.Handler) http.Handler {
+func Authenticate(ja *JWTAuth, extractor Extractor) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		hfn := func(rw http.ResponseWriter, req *http.Request) {
 			tokenString := extractor(req)
 			if tokenString == "" {
-				msg := ErrNoTokenFound.Error()
-				http.Error(rw, msg, http.StatusUnauthorized)
+				http.Error(rw, ErrMsgNoTokenFound, http.StatusUnauthorized)
 				return
 			}
 
-			parseFn := func(t *jwt.Token) (any, error) {
-				if t.Method.Alg() != ja.alg.Alg() {
-					return nil, ErrInvalidAlgo
-				}
-
-				return ja.verifyKey, nil
-			}
-
-			token, err := jwt.Parse(tokenString, parseFn)
+			ctx := req.Context()
+			token, err := jwt.Parse(tokenString, ja.ParseFn(ctx, ja))
 			if err != nil {
-				err = matchParseError(err)
-				http.Error(rw, err.Error(), http.StatusUnauthorized)
+				msg := parseErrorToMsg(err)
+				http.Error(rw, msg, http.StatusUnauthorized)
 				return
 			}
 
 			if !token.Valid {
-				msg := ErrUnauthorized.Error()
-				http.Error(rw, msg, http.StatusUnauthorized)
+				http.Error(rw, ErrMsgUnauthorized, http.StatusUnauthorized)
 				return
 			}
 
-			ctx := PassTokenToContext(req.Context(), token, nil)
+			for _, validator := range ja.ValidatorFns {
+				err := validator(ctx, token)
+				if err != nil {
+					http.Error(rw, err.Error(), http.StatusUnauthorized)
+					return
+				}
+			}
+
+			ctx = PassTokenToContext(ctx, token, nil)
 			req = req.WithContext(ctx)
 
 			next.ServeHTTP(rw, req)

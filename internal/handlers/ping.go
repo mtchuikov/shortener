@@ -5,38 +5,25 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/rs/zerolog"
 )
 
 type pinger interface {
-	Serve(context.Context) error
+	Ping(context.Context) error
 }
 
-type ping struct {
-	log    *zerolog.Logger
-	pinger pinger
+func RegisterPing(router chi.Router, pinger pinger) {
+	router.Get("/ping", ping(pinger))
 }
 
-func RegisterPing(log *zerolog.Logger, router chi.Router, pinger pinger) {
-	handler := ping{
-		log:    log,
-		pinger: pinger,
-	}
-
-	router.Get("/ping", handler.Handle)
-}
-
-func (h *ping) Handle(rw http.ResponseWriter, req *http.Request) {
-	err := h.pinger.Serve(req.Context())
-	if err != nil {
-		code, msg, err := serviceErrorToCodeAndMsg(err)
+func ping(srv pinger) http.HandlerFunc {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		err := srv.Ping(req.Context())
 		if err != nil {
-			logUnexpectedError(h.log, err, resolveOp)
+			msg := errSomethingWentWrong
+			http.Error(rw, msg, http.StatusInternalServerError)
+			return
 		}
 
-		http.Error(rw, msg, code)
-		return
+		rw.Write([]byte("pong"))
 	}
-
-	rw.Write([]byte("pong"))
 }

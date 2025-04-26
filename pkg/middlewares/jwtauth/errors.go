@@ -2,12 +2,17 @@ package jwtauth
 
 import "errors"
 
+const (
+	ErrMsgInvalidAlgo   = "algorithm mismatch"
+	ErrMsgInvalidGoType = "invalid go type"
+	ErrMsgNoTokenFound  = "no token found"
+	ErrMsgExpired       = "token expired"
+	ErrMsgNBFInvalid    = "token nbf validation failed"
+	ErrMsgIATInvalid    = "token iat validation failed"
+	ErrMsgUnauthorized  = "token unauthorized"
+)
+
 var (
-	ErrUnauthorized  = errors.New("token is unauthorized")
-	ErrExpired       = errors.New("token is expired")
-	ErrNBFInvalid    = errors.New("token nbf validation failed")
-	ErrIATInvalid    = errors.New("token iat validation failed")
-	ErrNoTokenFound  = errors.New("no token found")
-	ErrInvalidAlgo   = errors.New("algorithm mismatch")
-	ErrInvalidGoType = errors.New("invalid go type")
+	ErrInvalidAlgo   = errors.New(ErrMsgInvalidAlgo)
+	ErrInvalidGoType = errors.New(ErrMsgInvalidGoType)
 )

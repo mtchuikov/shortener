@@ -1,8 +1,6 @@
 package config
 
 import (
-	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/caarlos0/env/v11"
@@ -22,14 +20,12 @@ type config struct {
 	Verbose      bool   `env:"VERBOSE"`
 }
 
-var ErrUnableToParseEnv = errors.New("unable to parse env")
-
 func Init() error {
 	initFromFlags()
 
 	err := env.Parse(&conf)
 	if err != nil {
-		return fmt.Errorf("%w: %s", ErrUnableToParseEnv, err)
+		return err
 	}
 
 	if !strings.HasSuffix(conf.BaseURL, "/") {
@@ -59,8 +55,8 @@ func BaseURL() string {
 	return conf.BaseURL
 }
 
-func JWTSecret() string {
-	return conf.JWTSecret
+func JWTSecret() []byte {
+	return []byte(conf.JWTSecret)
 }
 
 func DatabaseDSN() string {

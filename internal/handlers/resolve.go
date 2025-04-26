@@ -1,60 +1,48 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 
-	"github.com/mtchuikov/shortener/internal/models"
-
 	"github.com/go-chi/chi/v5"
-	"github.com/rs/zerolog"
+	"github.com/mtchuikov/shortener/internal/services"
+	"github.com/mtchuikov/shortener/internal/storage"
+	"github.com/mtchuikov/shortener/internal/validators"
 )
 
-type resolver interface {
-	Serve(context.Context, models.ShortenID) (models.OriginalURL, error)
+func RegisterResolve(router chi.Router, srv services.Shortener) {
+	router.Get("/{slug}", resolve(srv))
 }
 
-type resolve struct {
-	log      *zerolog.Logger
-	resolver resolver
-}
+func resolve(srv services.Shortener) http.HandlerFunc {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		slug := chi.URLParam(req, "slug")
 
-func RegisterResolver(log *zerolog.Logger, router chi.Router, resolver resolver) {
-	handler := resolve{
-		log:      log,
-		resolver: resolver,
-	}
-
-	router.Get("/{shorten_id}", handler.Handle)
-}
-
-const resolveOp = "handlers.resolve.handle"
-
-func (h *resolve) Handle(rw http.ResponseWriter, req *http.Request) {
-	rawShortenID := chi.URLParam(req, "shorten_id")
-
-	shortenID, err := models.NewShortenID(rawShortenID)
-	if err != nil {
-		code, msg, err := modelErrorToCodeAndMsg(err)
+		err := validators.Slug(slug)
 		if err != nil {
-			logUnexpectedError(h.log, err, resolveOp)
+			msg := validators.ErrMsgInvalidSlug
+			http.Error(rw, msg, http.StatusBadRequest)
+			return
 		}
 
-		http.Error(rw, msg, code)
-		return
-	}
-
-	originalURL, err := h.resolver.Serve(req.Context(), shortenID)
-	if err != nil {
-		code, msg, err := serviceErrorToCodeAndMsg(err)
+		originalURL, deleted, err := srv.GetOriginalURLBySlug(req.Context(), slug)
 		if err != nil {
-			logUnexpectedError(h.log, err, resolveOp)
+			if err == storage.ErrOriginalURLNotFound {
+				msg := storage.ErrMsgOriginalURLNotFound
+				http.Error(rw, msg, http.StatusBadRequest)
+				return
+			}
+
+			msg := errSomethingWentWrong
+			http.Error(rw, msg, http.StatusInternalServerError)
+			return
 		}
 
-		http.Error(rw, msg, code)
-		return
-	}
+		if deleted {
+			rw.WriteHeader(http.StatusGone)
+			return
+		}
 
-	rw.Header().Set("Location", originalURL.String())
-	rw.WriteHeader(http.StatusTemporaryRedirect)
+		rw.Header().Set("Location", originalURL)
+		rw.WriteHeader(http.StatusTemporaryRedirect)
+	}
 }

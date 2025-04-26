@@ -41,10 +41,10 @@ func (c *Closer) NumTasks() int {
 	return c.numTasks
 }
 
-func (c *Closer) Add(task Task) {
+func (c *Closer) Add(sync bool, task TaskFn) {
 	c.mu.Lock()
 	c.numTasks++
-	c.tasks = append(c.tasks, task)
+	c.tasks = append(c.tasks, Task{Sync: sync, Fn: task})
 	c.mu.Unlock()
 }
 

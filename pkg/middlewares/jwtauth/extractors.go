@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type TokenExtractor func(req *http.Request) string
+type Extractor func(req *http.Request) string
 
 func ExtractFromAuthHeader(req *http.Request) string {
 	bearer := req.Header.Get("Authorization")
@@ -16,7 +16,7 @@ func ExtractFromAuthHeader(req *http.Request) string {
 	return ""
 }
 
-func ExtractFromCookie(cookie string) TokenExtractor {
+func ExtractFromCookie(cookie string) Extractor {
 	return func(req *http.Request) string {
 		cookie, err := req.Cookie(cookie)
 		if err == http.ErrNoCookie {
@@ -27,13 +27,13 @@ func ExtractFromCookie(cookie string) TokenExtractor {
 	}
 }
 
-func ExtractFromQuery(param string) TokenExtractor {
+func ExtractFromQuery(param string) Extractor {
 	return func(req *http.Request) string {
 		return req.URL.Query().Get(param)
 	}
 }
 
-func MultiTokenExtractor(extractors ...TokenExtractor) TokenExtractor {
+func MultiTokenExtractor(extractors ...Extractor) Extractor {
 	return func(req *http.Request) string {
 		for _, extractor := range extractors {
 			tokenString := extractor(req)

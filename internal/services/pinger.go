@@ -1,19 +1,21 @@
 package services
 
-import (
-	"context"
-)
+import "context"
 
 type ping interface {
 	Error() error
 }
 
-type pinger struct{ ping ping }
+var _ Pinger = (*pinger)(nil)
 
-func NewPinger(ping ping) *pinger {
-	return &pinger{ping: ping}
+type pinger struct {
+	ping ping
 }
 
-func (s *pinger) Serve(ctx context.Context) error {
+func NewPinger(ping ping) *pinger {
+	return &pinger{ping}
+}
+
+func (s *pinger) Ping(ctx context.Context) error {
 	return s.ping.Error()
 }

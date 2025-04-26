@@ -8,9 +8,9 @@
 
 *.out
 
-.idea
-.vscode
-
 build/
 vendor/
 internal/gen
+
+.idea
+.vscode

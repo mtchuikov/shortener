@@ -41,7 +41,7 @@ func initFromFlags() {
 	pflag.StringVarP(
 		&conf.JWTSecret,
 		"secret", "s",
-		"", "Secret to sign and verify JWTs",
+		"jwtsecret", "Secret to sign and verify JWTs",
 	)
 
 	pflag.StringVarP(

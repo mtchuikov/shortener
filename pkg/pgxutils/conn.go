@@ -6,11 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type Conn struct {
-	*pgx.Conn
-}
-
-func Connect(ctx context.Context, connURL string) (*Conn, error) {
+func Connect(ctx context.Context, connURL string) (*pgx.Conn, error) {
 	pgxConn, err := pgx.Connect(ctx, connURL)
 	if err != nil {
 		return nil, err
@@ -21,10 +17,10 @@ func Connect(ctx context.Context, connURL string) (*Conn, error) {
 		return nil, err
 	}
 
-	return &Conn{Conn: pgxConn}, nil
+	return pgxConn, nil
 }
 
-func ConnectWithConfig(ctx context.Context, conf *pgx.ConnConfig) (*Conn, error) {
+func ConnectWithConfig(ctx context.Context, conf *pgx.ConnConfig) (*pgx.Conn, error) {
 	pgxConn, err := pgx.ConnectConfig(ctx, conf)
 	if err != nil {
 		return nil, err
@@ -35,5 +31,5 @@ func ConnectWithConfig(ctx context.Context, conf *pgx.ConnConfig) (*Conn, error)
 		return nil, err
 	}
 
-	return &Conn{Conn: pgxConn}, nil
+	return pgxConn, nil
 }

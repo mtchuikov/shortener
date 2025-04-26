@@ -1,17 +1,37 @@
 package jwtauth
 
-import "github.com/golang-jwt/jwt/v5"
+import (
+	"context"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+type (
+	ParseFn     func(context.Context, *JWTAuth) jwt.Keyfunc
+	ValidatorFn func(context.Context, *jwt.Token) error
+)
 
 type JWTAuth struct {
-	alg       jwt.SigningMethod
-	signKey   any
-	verifyKey any
+	Alg          jwt.SigningMethod
+	SignKey      any
+	VerifyKey    any
+	ParseFn      ParseFn
+	ValidatorFns []ValidatorFn
 }
 
-func New(alg jwt.SigningMethod, secretKey, verifyKey any) *JWTAuth {
-	return &JWTAuth{
-		alg:       alg,
-		signKey:   secretKey,
-		verifyKey: verifyKey,
+func New(secretKey any, opts ...Option) *JWTAuth {
+	ja := &JWTAuth{
+		Alg:          DefaultAlg,
+		SignKey:      secretKey,
+		VerifyKey:    secretKey,
+		ValidatorFns: make([]ValidatorFn, 0),
 	}
+
+	ja.ParseFn = DefaultParseFn
+
+	for _, opt := range opts {
+		opt(ja)
+	}
+
+	return ja
 }

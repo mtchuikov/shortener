@@ -8,8 +8,6 @@ import (
 
 	"github.com/mtchuikov/shortener/pkg/backoff"
 	"github.com/mtchuikov/shortener/pkg/chsubscription"
-
-	zlog "github.com/rs/zerolog"
 )
 
 const (
@@ -24,7 +22,6 @@ type pinger interface {
 }
 
 type Pinger struct {
-	log             *zlog.Logger
 	mu              sync.Mutex
 	pinger          pinger
 	ticker          *time.Ticker
@@ -36,9 +33,8 @@ type Pinger struct {
 	closeOnce       sync.Once
 }
 
-func New(log *zlog.Logger, pinger pinger, opts ...Option) *Pinger {
+func New(pinger pinger, opts ...Option) *Pinger {
 	p := &Pinger{
-		log:             log,
 		mu:              sync.Mutex{},
 		pinger:          pinger,
 		ticker:          time.NewTicker(DefaultPingInterval),
@@ -63,55 +59,48 @@ func New(log *zlog.Logger, pinger pinger, opts ...Option) *Pinger {
 }
 
 func (p *Pinger) Ping(ctx context.Context, timeout time.Duration) {
-	for {
-		select {
-		case <-ctx.Done():
-			p.log.Debug().
-				Msg("context cancelled, stopping ping loop")
-			return
-		case <-p.ticker.C:
-			p.log.Debug().
-				Msg("ticker ticked, starting ping")
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				p.chsub.Notify(ctx, ctx.Err())
+				return
+			case <-p.ticker.C:
 
-			timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
+				timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
 
-			p.mu.Lock()
-			err := p.pinger.Ping(timeoutCtx)
-			p.mu.Unlock()
+				p.mu.Lock()
+				err := p.pinger.Ping(timeoutCtx)
+				p.mu.Unlock()
 
-			cancel()
+				cancel()
 
-			if err != nil {
-				p.log.Debug().
-					Err(err).
-					Msg("failed to ping")
+				if err != nil {
+					if p.failedThreshold > 0 &&
+						p.failedCount >= p.failedThreshold {
+						err = fmt.Errorf("%w: %w", ErrFailedThresholdExceeded, err)
+					}
 
-				if p.failedThreshold > 0 &&
-					p.failedCount >= p.failedThreshold {
-					err = fmt.Errorf("%w: %w", ErrFailedThresholdExceeded, err)
+					p.err = err
+					p.chsub.Notify(ctx, err)
+
+					delay := p.backoff.Next()
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(delay):
+						continue
+					}
 				}
 
-				p.err = err
-				p.chsub.Notify(ctx, err)
-
-				delay := p.backoff.Next()
-				select {
-				case <-ctx.Done():
-					return
-				case <-time.After(delay):
-					continue
-				}
+				p.backoff.Reset()
+				p.failedCount = 0
 			}
-
-			p.log.Debug().
-				Msg("ping successful")
-			p.backoff.Reset()
-			p.failedCount = 0
 		}
-	}
+	}()
 }
 
-func (p *Pinger) ChangePinger(pinger pinger) {
+func (p *Pinger) Replace(pinger pinger) {
 	p.mu.Lock()
 	p.pinger = pinger
 	p.mu.Unlock()
@@ -130,12 +119,11 @@ func (p *Pinger) Unsubscribe(item <-chan error) {
 }
 
 func (p *Pinger) Close(ctx context.Context) error {
-	closeFn := func() {
-		p.ticker.Stop()
-		p.chsub.Close()
-	}
-
-	p.closeOnce.Do(closeFn)
+	p.closeOnce.Do(
+		func() {
+			p.ticker.Stop()
+			p.chsub.Close()
+		})
 
 	return nil
 }

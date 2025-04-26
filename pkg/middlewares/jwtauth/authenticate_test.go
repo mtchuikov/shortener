@@ -27,7 +27,7 @@ func TestAuthenticate(t *testing.T) {
 
 func (s *testAuthenticateSuite) SetupTest() {
 	s.secretKey = []byte("jwt")
-	s.ja = New(jwt.SigningMethodHS256, s.secretKey, s.secretKey)
+	s.ja = New(s.secretKey)
 
 	middleware := Authenticate(s.ja, ExtractFromAuthHeader)
 	s.handler = middleware(http.HandlerFunc(
@@ -58,7 +58,7 @@ func (s *testAuthenticateSuite) TestAuthenticate_NoToken() {
 	msg := string(payload)
 	msg = strings.ReplaceAll(msg, "\n", "")
 
-	s.Require().Equal(ErrNoTokenFound.Error(), msg)
+	s.Require().Equal(ErrMsgNoTokenFound, msg)
 }
 
 func (s *testAuthenticateSuite) TestAuthenticate_ExpiredToken() {
@@ -75,6 +75,6 @@ func (s *testAuthenticateSuite) TestAuthenticate_ExpiredToken() {
 	msg := string(payload)
 	msg = strings.ReplaceAll(msg, "\n", "")
 
-	s.Require().Equal(ErrExpired.Error(), msg)
+	s.Require().Equal(ErrMsgExpired, msg)
 
 }
