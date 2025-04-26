@@ -6,25 +6,67 @@ import (
 	"github.com/caarlos0/env/v11"
 )
 
-type Config struct {
-	ServiceName string
-	ServerAddr  string `env:"SERVER_ADDRESS"`
-	BaseURL     string `env:"BASE_URL"`
-	FileStorage string `env:"FILE_STORAGE_PATH"`
-	Verbose     bool   `env:"VERBOSE"`
+var conf config
+
+type config struct {
+	LogToFile    bool   `ENV:"LOG_TO_FILE"`
+	LogFile      string `ENV:"LOG_FILE"`
+	LogFileLevel string `ENV:"LOG_FILE_LEVEL"`
+	ServerAddr   string `env:"SERVER_ADDRESS"`
+	BaseURL      string `env:"BASE_URL"`
+	JWTSecret    string `env:"JWT_SECRET"`
+	DatabaseDSN  string `ENV:"DATABASE_DSN"`
+	FileStorage  string `env:"FILE_STORAGE_PATH"`
+	Verbose      bool   `env:"VERBOSE"`
 }
 
-func New() Config {
-	const serviceName = "shortener"
-	config := Config{ServiceName: serviceName}
+func Init() error {
+	initFromFlags()
 
-	config.loadFromFlags()
-	env.Parse(&config)
-
-	hasSlash := strings.HasSuffix(config.BaseURL, "/")
-	if !hasSlash {
-		config.BaseURL = config.BaseURL + "/"
+	err := env.Parse(&conf)
+	if err != nil {
+		return err
 	}
 
-	return config
+	if !strings.HasSuffix(conf.BaseURL, "/") {
+		conf.BaseURL = conf.BaseURL + "/"
+	}
+
+	return nil
+}
+
+func LogToFile() bool {
+	return conf.LogToFile
+}
+
+func LogFile() string {
+	return conf.LogFile
+}
+
+func LogFileLevel() string {
+	return conf.LogFileLevel
+}
+
+func ServerAddr() string {
+	return conf.ServerAddr
+}
+
+func BaseURL() string {
+	return conf.BaseURL
+}
+
+func JWTSecret() []byte {
+	return []byte(conf.JWTSecret)
+}
+
+func DatabaseDSN() string {
+	return conf.DatabaseDSN
+}
+
+func FileStorage() string {
+	return conf.FileStorage
+}
+
+func Verbose() bool {
+	return conf.Verbose
 }
