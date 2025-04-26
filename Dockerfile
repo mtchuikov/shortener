@@ -11,7 +11,11 @@ WORKDIR /build
 ADD go.mod go.sum .
 RUN go mod download
 
+RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.29.0
+
 COPY . .
+
+RUN sqlc generate
 RUN go build -ldflags="-s -w" -o /app/shortener ./cmd/main.go
 
 FROM alpine

@@ -1,0 +1,12 @@
+version: "2"
+
+sql:
+  - schema: sql/migrations/01_short_urls.up.sql
+    queries: sql/queries
+    engine: postgresql
+    gen:
+      go:
+        package: shorturls
+        out: internal/gen/sqlc/shorturls
+        sql_package: pgx/v5
+        sql_driver: github.com/jackc/pgx/v5

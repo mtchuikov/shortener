@@ -1,46 +1,48 @@
 package handlers
 
 import (
-	"context"
-	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mtchuikov/shortener/pkg/middlewares"
-	"github.com/rs/zerolog"
+	"github.com/mtchuikov/shortener/internal/services"
+	"github.com/mtchuikov/shortener/internal/storage"
+	"github.com/mtchuikov/shortener/internal/validators"
 )
 
-type resolverService interface {
-	Serve(ctx context.Context, id string) (string, error)
+func RegisterResolve(router chi.Router, srv services.Shortener) {
+	router.Get("/{slug}", resolve(srv))
 }
 
-type resolver struct {
-	logger  zerolog.Logger
-	service resolverService
-}
+func resolve(srv services.Shortener) http.HandlerFunc {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		slug := chi.URLParam(req, "slug")
 
-func RegisterResolver(lg zerolog.Logger, mux *chi.Mux, srv resolverService) {
-	handler := resolver{
-		logger:  lg,
-		service: srv,
+		err := validators.Slug(slug)
+		if err != nil {
+			msg := validators.ErrMsgInvalidSlug
+			http.Error(rw, msg, http.StatusBadRequest)
+			return
+		}
+
+		originalURL, deleted, err := srv.GetOriginalURLBySlug(req.Context(), slug)
+		if err != nil {
+			if err == storage.ErrOriginalURLNotFound {
+				msg := storage.ErrMsgOriginalURLNotFound
+				http.Error(rw, msg, http.StatusBadRequest)
+				return
+			}
+
+			msg := errSomethingWentWrong
+			http.Error(rw, msg, http.StatusInternalServerError)
+			return
+		}
+
+		if deleted {
+			rw.WriteHeader(http.StatusGone)
+			return
+		}
+
+		rw.Header().Set("Location", originalURL)
+		rw.WriteHeader(http.StatusTemporaryRedirect)
 	}
-
-	mux.Get("/{short_id}", handler.Handle)
-}
-
-func (h *resolver) Handle(rw http.ResponseWriter, req *http.Request) {
-	ctx := req.Context()
-	id := chi.URLParam(req, "short_id")
-
-	url, err := h.service.Serve(ctx, id)
-	if err != nil {
-		middlewares.RequestContextWithError(req, err)
-
-		errMsg := errors.Unwrap(err).Error()
-		http.Error(rw, errMsg, http.StatusBadRequest)
-		return
-	}
-
-	rw.Header().Set("Location", url)
-	rw.WriteHeader(http.StatusTemporaryRedirect)
 }
